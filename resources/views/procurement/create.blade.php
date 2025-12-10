@@ -1,132 +1,134 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Create New Procurement Item</h1>
+<div class="card bg-base-100 shadow-xl max-w-4xl mx-auto">
+    <div class="card-body">
+        <h1 class="card-title text-2xl font-bold mb-6">Create New Procurement Item</h1>
 
-    <form action="{{ route('procurement.store') }}" method="POST" class="space-y-4">
-        @csrf
+        <form action="{{ route('procurement.store') }}" method="POST" class="space-y-4">
+            @csrf
 
-        <!-- Row 1: Identification -->
-        <h3 class="text-lg font-semibold text-gray-700 border-b pb-1">Identification</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">External ID</label>
-                <input type="text" name="external_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
+            <!-- Row 1: Identification -->
+            <div class="divider text-lg font-semibold">Identification</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">External ID</span></label>
+                    <input type="text" name="external_id" class="input input-bordered w-full">
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Material Code *</span></label>
+                    <input type="text" name="mat_code" required class="input input-bordered w-full">
+                </div>
+                <div class="form-control md:col-span-2">
+                    <label class="label"><span class="label-text font-medium">Nama Barang *</span></label>
+                    <input type="text" name="nama_barang" required class="input input-bordered w-full">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Material Code *</label>
-                <input type="text" name="mat_code" required class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Nama Barang *</label>
-                <input type="text" name="nama_barang" required class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-        </div>
 
-        <!-- Row 2: Specs & Value -->
-        <h3 class="text-lg font-semibold text-gray-700 border-b pb-1 mt-4">Specs & Value</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Qty *</label>
-                <input type="number" step="any" name="qty" required class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
+            <!-- Row 2: Specs & Value -->
+            <div class="divider text-lg font-semibold mt-6">Specs & Value</div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Qty *</span></label>
+                    <input type="number" step="any" name="qty" required class="input input-bordered w-full">
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">UoM *</span></label>
+                    <input type="text" name="um" required class="input input-bordered w-full">
+                </div>
+                <div class="form-control md:col-span-2">
+                    <label class="label"><span class="label-text font-medium">Nilai (Budget/Value)</span></label>
+                    <input type="number" step="0.01" name="nilai" class="input input-bordered w-full">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">UoM *</label>
-                <input type="text" name="um" required class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Nilai (Budget/Value)</label>
-                <input type="number" step="0.01" name="nilai" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-        </div>
 
-        <!-- Row 3: Request Info -->
-        <h3 class="text-lg font-semibold text-gray-700 border-b pb-1 mt-4">Requester Info</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">PG</label>
-                <input type="text" name="pg" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
+            <!-- Row 3: Request Info -->
+            <div class="divider text-lg font-semibold mt-6">Requester Info</div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">PG</span></label>
+                    <input type="text" name="pg" class="input input-bordered w-full">
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Bagian</span></label>
+                    <input type="text" name="bagian" class="input input-bordered w-full">
+                </div>
+                 <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">User Requester</span></label>
+                    <input type="text" name="user_requester" class="input input-bordered w-full">
+                </div>
+                 <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Tgl Terima Dok.</span></label>
+                    <input type="date" name="tanggal_terima_dokumen" class="input input-bordered w-full">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Bagian</label>
-                <input type="text" name="bagian" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-             <div>
-                <label class="block text-sm font-medium text-gray-700">User Requester</label>
-                <input type="text" name="user_requester" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-             <div>
-                <label class="block text-sm font-medium text-gray-700">Tgl Terima Dok.</label>
-                <input type="date" name="tanggal_terima_dokumen" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-        </div>
 
-        <!-- Row 4: Procurement Info -->
-        <h3 class="text-lg font-semibold text-gray-700 border-b pb-1 mt-4">Procurement Status</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Proc Type</label>
-                <input type="text" name="proc_type" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
+            <!-- Row 4: Procurement Info -->
+            <div class="divider text-lg font-semibold mt-6">Procurement Status</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Proc Type</span></label>
+                    <input type="text" name="proc_type" class="input input-bordered w-full">
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Buyer</span></label>
+                     <select name="buyer" class="select select-bordered w-full">
+                        <option value="">Select Buyer</option>
+                        @foreach(\App\Enums\BuyerEnum::cases() as $buyer)
+                            <option value="{{ $buyer->value }}">{{ $buyer->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-control">
+                     <label class="label"><span class="label-text font-medium">Status *</span></label>
+                     <select name="status" class="select select-bordered w-full">
+                        @foreach(\App\Enums\ProcurementStatusEnum::cases() as $s)
+                            <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Tgl Status</span></label>
+                    <input type="date" name="tanggal_status" class="input input-bordered w-full">
+                </div>
+                <div class="form-control md:col-span-2">
+                    <label class="label"><span class="label-text font-medium">Emergency Note</span></label>
+                    <input type="text" name="emergency" class="input input-bordered w-full">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Buyer</label>
-                 <select name="buyer" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-                    <option value="">Select Buyer</option>
-                    @foreach(\App\Enums\BuyerEnum::cases() as $buyer)
-                        <option value="{{ $buyer->value }}">{{ $buyer->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                 <label class="block text-sm font-medium text-gray-700">Status *</label>
-                 <select name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-                    @foreach(\App\Enums\ProcurementStatusEnum::cases() as $s)
-                        <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Tgl Status</label>
-                <input type="date" name="tanggal_status" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Emergency Note</label>
-                <input type="text" name="emergency" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-        </div>
 
-        <!-- Row 5: Vendor & PO -->
-        <h3 class="text-lg font-semibold text-gray-700 border-b pb-1 mt-4">Vendor & PO</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-             <div>
-                <label class="block text-sm font-medium text-gray-700">Vendor Name</label>
-                <input type="text" name="nama_vendor" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
+            <!-- Row 5: Vendor & PO -->
+            <div class="divider text-lg font-semibold mt-6">Vendor & PO</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Vendor Name</span></label>
+                    <input type="text" name="nama_vendor" class="input input-bordered w-full">
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">No PO</span></label>
+                    <input type="text" name="no_po" class="input input-bordered w-full">
+                </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Tgl PO</span></label>
+                    <input type="date" name="tanggal_po" class="input input-bordered w-full">
+                </div>
+                 <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">Tgl Datang</span></label>
+                    <input type="date" name="tanggal_datang" class="input input-bordered w-full">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">No PO</label>
-                <input type="text" name="no_po" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Tgl PO</label>
-                <input type="date" name="tanggal_po" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-             <div>
-                <label class="block text-sm font-medium text-gray-700">Tgl Datang</label>
-                <input type="date" name="tanggal_datang" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2">
-            </div>
-        </div>
 
-        <!-- Row 6: Remarks -->
-        <div class="mt-4">
-            <label class="block text-sm font-medium text-gray-700">Keterangan</label>
-            <textarea name="keterangan" rows="3" class="mt-1 block w-full rounded border-gray-300 shadow-sm border p-2"></textarea>
-        </div>
+            <!-- Row 6: Remarks -->
+            <div class="form-control mt-4">
+                <label class="label"><span class="label-text font-medium">Keterangan</span></label>
+                <textarea name="keterangan" rows="3" class="textarea textarea-bordered w-full"></textarea>
+            </div>
 
-        <div class="flex justify-end pt-4">
-            <a href="{{ route('dashboard') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded mr-2 hover:bg-gray-300">Cancel</a>
-            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700">Create Item</button>
-        </div>
-    </form>
+            <div class="card-actions justify-end mt-6">
+                <a href="{{ route('dashboard') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Item</button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection

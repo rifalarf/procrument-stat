@@ -136,14 +136,27 @@ class ProcurementController extends Controller
 
     public function bulkDestroy(Request $request)
     {
+        $ids = $request->ids;
+
+        // If ids is a string (from form hidden input), decode it
+        if (is_string($ids)) {
+             // It might be a JSON string from Alpine x-bind:value="JSON.stringify(selected)"
+             $decoded = json_decode($ids, true);
+             if (is_array($decoded)) {
+                 $ids = $decoded;
+             }
+        }
+        
+        $request->merge(['ids' => $ids]);
+
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:procurement_items,id',
         ]);
+        
+        \App\Models\ProcurementItem::whereIn('id', $ids)->delete();
 
-        \App\Models\ProcurementItem::whereIn('id', $request->ids)->delete();
-
-        return response()->json(['success' => true, 'message' => 'Selected items deleted.']);
+        return back()->with('success', 'Selected items deleted.');
     }
 
     public function truncate()

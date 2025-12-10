@@ -4,34 +4,6 @@
 <div x-data="{
     selected: [],
     allSelected: false,
-    resizing: false,
-
-    startResize(event, colId) {
-        this.resizing = true;
-        let th = event.target.closest('th');
-        let startX = event.pageX;
-        let startWidth = th.offsetWidth;
-        
-        // Prevent text selection
-        document.body.style.userSelect = 'none';
-        document.body.style.cursor = 'col-resize';
-        
-        let onMouseMove = (e) => {
-            let newWidth = Math.max(80, startWidth + (e.pageX - startX));
-            this.colWidths[colId] = newWidth + 'px';
-        };
-        
-        let onMouseUp = () => {
-             this.resizing = false;
-             document.body.style.userSelect = '';
-             document.body.style.cursor = '';
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
-        
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    },
     toggleAll() {
         if (this.selected.length === {{ $items->count() }}) {
             this.selected = [];
@@ -39,134 +11,89 @@
             this.selected = [{{ $items->pluck('id')->implode(',') }}];
         }
     },
-    deleteSelected() {
-        if (this.selected.length === 0) return;
 
-        window.dispatchEvent(new CustomEvent('open-confirm-modal', {
-            detail: {
-                title: 'Delete Selected Items',
-                message: 'Are you sure you want to delete ' + this.selected.length + ' items?',
-                confirmText: 'Delete',
-                cancelText: 'Cancel',
-                onConfirm: () => {
-                    fetch('{{ route('admin.procurement.bulk-delete') }}', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                        body: JSON.stringify({ ids: this.selected })
-                    }).then(res => {
-                        if(res.ok) {
-                            window.location.reload();
-                        } else {
-                            window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Failed to delete items', type: 'error' } }));
-                        }
-                    });
-                }
-            }
-        }));
-    },
     deleteAll() {
-        window.dispatchEvent(new CustomEvent('open-confirm-modal', {
-            detail: {
-                title: 'DELETE ALL DATA',
-                message: 'WARNING: This will delete ALL data in the database. Are you absolutely sure?',
-                confirmText: 'Yes, Delete Everything',
-                cancelText: 'Cancel',
-                onConfirm: () => {
-                    // Double check by opening another modal or just proceeding? 
-                    // User logic had a double confirm.
-                    // For simplicity, let's just do one strong confirm or re-dispatch.
-                    // Let's emulate the double check by dispatching another one.
-                    setTimeout(() => {
-                         window.dispatchEvent(new CustomEvent('open-confirm-modal', {
-                            detail: {
-                                title: 'FINAL WARNING',
-                                message: 'This action cannot be undone. double check: Are you absolutely really sure?',
-                                confirmText: 'I Understand, DELETE',
-                                cancelText: 'Cancel',
-                                onConfirm: () => {
-                                    let form = document.createElement('form');
-                                    form.method = 'POST';
-                                    form.action = '{{ route('admin.procurement.delete-all') }}';
-                                    let csrf = document.createElement('input');
-                                    csrf.type = 'hidden';
-                                    csrf.name = '_token';
-                                    csrf.value = '{{ csrf_token() }}';
-                                    form.appendChild(csrf);
-                                    document.body.appendChild(form);
-                                    form.submit();
-                                }
-                            }
-                        }));
-                    }, 200);
-                }
+        if(confirm('WARNING: This will delete ALL data in the database. Are you absolutely sure?')) {
+            if(confirm('FINAL WARNING: This action cannot be undone. Are you absolutely really sure?')) {
+                let form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route('admin.procurement.delete-all') }}';
+                let csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+                form.appendChild(csrf);
+                document.body.appendChild(form);
+                form.submit();
             }
-        }));
+        }
     }
-}" x-init="initResize();" class="space-y-6">
-
+}" class="space-y-6">
 
     <!-- Header Actions -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-        <h1 class="text-2xl font-bold text-gray-800">Dashboard Pengadaan</h1>
-        <div class="flex items-center space-x-2">
+        <h1 class="text-2xl font-bold text-base-content">Dashboard Pengadaan</h1>
+        <div class="flex flex-wrap items-center gap-2">
             @if(auth()->user()->isAdmin())
-                <div x-show="selected.length > 0" x-cloak class="flex items-center space-x-2 mr-4">
-                    <button @click="deleteSelected()" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700 shadow-sm transition">
-                        Delete Selected (<span x-text="selected.length"></span>)
-                    </button>
+                <div x-show="selected.length > 0" x-cloak>
+                    <form action="{{ route('admin.procurement.bulk-delete') }}" method="POST" id="bulk-delete-form" onsubmit="return confirm('Are you sure you want to delete selected items?')">
+                        @csrf
+                        <input type="hidden" name="ids" :value="JSON.stringify(selected)">
+                        <button type="submit" class="btn btn-error btn-sm text-white">
+                            Delete Selected (<span x-text="selected.length"></span>)
+                        </button>
+                    </form>
                 </div>
 
-                <a href="{{ route('admin.import.form') }}" class="bg-teal-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-teal-700 shadow-sm transition">Import Excel</a>
-                <a href="{{ route('admin.columns.index') }}" class="bg-gray-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-gray-700 shadow-sm transition">Columns</a>
-                <a href="{{ route('procurement.create') }}" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700 shadow-sm transition">+ New Item</a>
-
+                <a href="{{ route('admin.import.form') }}" class="btn btn-accent btn-sm text-white">Import Excel</a>
+                <a href="{{ route('admin.columns.index') }}" class="btn btn-neutral btn-sm text-white">Columns</a>
+                <a href="{{ route('procurement.create') }}" class="btn btn-primary btn-sm text-white">+ New Item</a>
             @endif
             <!-- Export Button -->
-            <a href="{{ route('procurement.export') }}" class="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-green-700 shadow-sm transition">Export XLSX</a>
+            <a href="{{ route('procurement.export') }}" class="btn btn-success btn-sm text-white">Export XLSX</a>
         </div>
     </div>
 
     <!-- Filters & Search -->
-    <!-- Filters & Search -->
-    <form method="GET" action="{{ route('dashboard') }}" class="bg-white p-4 rounded shadow space-y-4">
+    <form method="GET" action="{{ route('dashboard') }}" class="bg-base-100 p-4 rounded-box shadow space-y-4">
         <!-- Row 1: Search -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Search</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, ID Procurement, Name, PO..." class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+        <div class="form-control">
+            <label class="label"><span class="label-text font-medium">Search</span></label>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, ID Procurement, Name, PO..." class="input input-bordered w-full">
         </div>
 
         <!-- Row 2: Filters -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Buyer</label>
-                <select name="buyer" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
+            <div class="form-control">
+                <label class="label"><span class="label-text font-medium">Buyer</span></label>
+                <select name="buyer" class="select select-bordered w-full">
                     <option value="">All Buyers</option>
                     @foreach($buyers as $buyer)
                         <option value="{{ $buyer->value }}" {{ request('buyer') == $buyer->value ? 'selected' : '' }}>{{ $buyer->label() }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
+            <div class="form-control">
+                 <label class="label"><span class="label-text font-medium">Status</span></label>
+                <select name="status" class="select select-bordered w-full">
                     <option value="">All Status</option>
                     @foreach($statuses as $status)
                         <option value="{{ $status->value }}" {{ request('status') == $status->value ? 'selected' : '' }}>{{ $status->label() }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Bagian</label>
-                <select name="bagian" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
+            <div class="form-control">
+                 <label class="label"><span class="label-text font-medium">Bagian</span></label>
+                <select name="bagian" class="select select-bordered w-full">
                     <option value="">All Bagian</option>
                     @foreach($bagians as $bagian)
                         <option value="{{ $bagian->value }}" {{ request('bagian') == $bagian->value ? 'selected' : '' }}>{{ $bagian->label() }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">User</label>
-                <select name="user" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
+            <div class="form-control">
+                 <label class="label"><span class="label-text font-medium">User</span></label>
+                <select name="user" class="select select-bordered w-full">
                     <option value="">All Users</option>
                     @foreach($users as $user)
                         <option value="{{ $user }}" {{ request('user') == $user ? 'selected' : '' }}>{{ $user }}</option>
@@ -174,202 +101,186 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 w-full">Filter</button>
+                <button type="submit" class="btn btn-primary w-full">Filter</button>
             </div>
         </div>
     </form>
 
     <!-- Desktop Table View -->
-    <div class="hidden md:block bg-white shadow rounded overflow-hidden overflow-x-auto" :class="{'cursor-col-resize select-none': resizing}">
-        <table class="min-w-full table-fixed divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr id="table-headers" class="border-b border-gray-200">
-                    @if(auth()->user()->isAdmin())
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10 border-r border-gray-200">
-                            <input type="checkbox" @click="toggleAll()" :checked="selected.length === {{ $items->count() }} && {{ $items->count() }} > 0" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        </th>
-                    @endif
-                    @foreach($columns as $col)
-                        <th 
-                            data-id="{{ $col->id }}" 
-                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider group relative border-r border-gray-200" 
-
-                            :style="'width: ' + (colWidths['{{ $col->id }}'] || 'auto') + '; min-width: ' + ('{{ $col->key }}' === 'status' ? '350px' : ('{{ $col->key }}' === 'bagian' ? '250px' : '100px')) + '; position: relative;'"
-                        >
-                            <div class="flex items-center justify-between h-full w-full">
-                                <span class="truncate pr-4">{{ $col->label }}</span>
-                                <!-- Robust Resize Handle -->
-                                <div 
-                                    class="absolute inset-y-0 right-0 w-4 cursor-col-resize z-50 flex items-center justify-center hover:bg-blue-50 transition-colors"
-                                    @mousedown.stop.prevent="startResize($event, '{{ $col->id }}')"
-                                    title="Drag to resize"
-                                >
-                                    <!-- Permanent visible line -->
-                                    <div class="h-6 w-0.5 bg-gray-400"></div> 
-                                </div>
-                            </div>
-
-                        </th>
-                    @endforeach
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($items as $item)
+    <div class="hidden md:block bg-base-100 shadow rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <!-- head -->
+                <thead class="bg-base-200">
                     <tr>
                         @if(auth()->user()->isAdmin())
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                <input type="checkbox" value="{{ $item->id }}" x-model="selected" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            </td>
+                            <th class="w-10">
+                                <input type="checkbox" @click="toggleAll()" :checked="selected.length === {{ $items->count() }} && {{ $items->count() }} > 0" class="checkbox checkbox-primary checkbox-sm">
+                            </th>
                         @endif
                         @foreach($columns as $col)
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                @if($col->key == 'status')
-                                    <div x-data="{ 
-                                        current: '{{ $item->status instanceof \UnitEnum ? $item->status->value : $item->status }}',
-                                        update(val) {
-                                            const oldVal = this.current;
-                                            this.current = val;
-                                            
-                                            fetch('/procurement/{{ $item->id }}/quick-update', {
-                                                method: 'POST',
-                                                headers: { 
-                                                    'Content-Type': 'application/json',
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                },
-                                                body: JSON.stringify({ field: 'status', value: val })
-                                            })
-                                            .then(r => r.json())
-                                            .then(data => {
-                                                if(!data.success) {
-                                                    window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Failed: ' + (data.message || 'Unknown'), type: 'error' } }));
-                                                    this.current = oldVal; 
-                                                } else {
-                                                    window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Status updated', type: 'success' } }));
-                                                }
-                                            });
-                                        }
-                                    }">
-                                        <select x-model="current" @change="update($event.target.value)" 
-                                            class="text-sm font-semibold rounded px-2 py-1 min-w-[200px] border-gray-300 focus:ring-2 focus:ring-indigo-500 cursor-pointer bg-white text-gray-900"
-                                        >
-                                            @foreach($statuses as $status)
-                                                <option value="{{ $status->value }}">{{ $status->label() }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @elseif($col->key == 'bagian')
-                                    <div x-data="{ 
-                                        current: '{{ $item->bagian }}',
-                                        update(val) {
-                                            const oldVal = this.current;
-                                            this.current = val;
-                                            
-                                            fetch('/procurement/{{ $item->id }}/quick-update', {
-                                                method: 'POST',
-                                                headers: { 
-                                                    'Content-Type': 'application/json',
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                },
-                                                body: JSON.stringify({ field: 'bagian', value: val })
-                                            })
-                                            .then(r => r.json())
-                                            .then(data => {
-                                                if(!data.success) {
-                                                    window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Failed: ' + (data.message || 'Unknown'), type: 'error' } }));
-                                                    this.current = oldVal; // Revert
-                                                } else {
-                                                    window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Bagian updated', type: 'success' } }));
-                                                }
-                                            });
-                                        }
-                                     }">
-                                        <select x-model="current" @change="update($event.target.value)" 
-                                            class="text-sm border-gray-300 rounded p-1 min-w-[150px] bg-transparent hover:bg-gray-50 focus:bg-white transition-colors cursor-pointer"
-                                        >
-                                            <option value="">-</option>
-                                            @foreach($bagians as $case)
-                                                <option value="{{ $case->value }}">{{ $case->label() }}</option>
-                                            @endforeach
-                                        </select>
-                                     </div>
-                                @elseif($col->key == 'pg')
-                                     <div x-data="{ 
-                                        val: '{{ $item->pg }}',
-                                        update() {
-                                             fetch('/procurement/{{ $item->id }}/quick-update', {
-                                                method: 'POST',
-                                                headers: { 
-                                                    'Content-Type': 'application/json',
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                },
-                                                body: JSON.stringify({ field: 'pg', value: this.val })
-                                            }).then(r => r.json()).then(d => { 
-                                                if(!d.success) {
-                                                    window.dispatchEvent(new CustomEvent('notify', { detail: { message: d.message, type: 'error' } }));
-                                                } else {
-                                                    window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'PG updated', type: 'success' } }));
-                                                }
-                                            });
-                                        }
-                                     }">
-                                        <input type="text" x-model="val" @blur="update()" @keydown.enter="update()" class="text-sm border-gray-300 rounded p-1 w-full bg-transparent hover:bg-gray-50 focus:bg-white transition-colors">
-                                     </div>
-                                @elseif($col->key == 'buyer')
-                                    @php
-                                        $buyerEnum = $item->buyer; // Since it's cast, this is an Enum instance or null
-                                        $color = $buyerEnum?->color() ?? '#f3f4f6';
-                                        $isDark = in_array($color, ['#3d3d3d', '#b10202', '#753800', '#473822', '#11734b', '#0a53a8', '#215a6c', '#5a3286']);
-                                        $textColor = $isDark ? 'text-white' : 'text-gray-800';
-                                    @endphp
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $textColor }}" style="background-color: {{ $color }}">
-                                        {{ $buyerEnum?->label() ?? '-' }}
-                                    </span>
-                                @elseif((str_starts_with($col->key, 'tanggal_') || in_array($col->key, ['tanggal_po', 'tanggal_datang', 'tanggal_status'])) && $item->{$col->key})
-                                     {{ \Carbon\Carbon::parse($item->{$col->key})->format('d M Y') }}
-                                @elseif(str_starts_with($col->key, 'extra_'))
-                                    {{ $item->extra_attributes[$col->key] ?? '-' }}
-                                @elseif($col->key == 'nilai')
-                                    {{ number_format($item->nilai, 0, ',', '.') }}
-                                @else
-                                    {{ $item->{$col->key} }}
-                                @endif
-                            </td>
+                            <th class="whitespace-nowrap">{{ $col->label }}</th>
                         @endforeach
-                         <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="{{ route('procurement.show', $item->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
-                        </td>
+                        <th>Actions</th>
                     </tr>
-                @empty
-                    <tr>
-                         @if(auth()->user()->isAdmin())
-                            <td></td>
-                         @endif
-                        <td colspan="{{ $columns->count() + 1 }}" class="px-6 py-4 text-center text-gray-500">No items found.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse($items as $item)
+                        <tr class="hover">
+                            @if(auth()->user()->isAdmin())
+                                <td>
+                                    <input type="checkbox" value="{{ $item->id }}" x-model="selected" class="checkbox checkbox-primary checkbox-sm">
+                                </td>
+                            @endif
+                            @foreach($columns as $col)
+                                <td class="{{ $col->key === 'nama_barang' ? 'min-w-[200px] whitespace-normal' : 'whitespace-nowrap' }}">
+                                    @if($col->key == 'status')
+                                        <div x-data="{ 
+                                            current: '{{ $item->status instanceof \UnitEnum ? $item->status->value : $item->status }}',
+                                            update(val) {
+                                                const oldVal = this.current;
+                                                this.current = val;
+                                                
+                                                fetch('/procurement/{{ $item->id }}/quick-update', {
+                                                    method: 'POST',
+                                                    headers: { 
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                                    },
+                                                    body: JSON.stringify({ field: 'status', value: val })
+                                                })
+                                                .then(r => r.json())
+                                                .then(data => {
+                                                    if(!data.success) {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Failed: ' + (data.message || 'Unknown'), type: 'error' } }));
+                                                        this.current = oldVal; 
+                                                    } else {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Status updated', type: 'success' } }));
+                                                    }
+                                                });
+                                            }
+                                        }">
+                                            <select x-model="current" @change="update($event.target.value)" 
+                                                class="select select-bordered select-xs w-full max-w-[160px]"
+                                            >
+                                                @foreach($statuses as $status)
+                                                    <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @elseif($col->key == 'bagian')
+                                        <div x-data="{ 
+                                            current: '{{ $item->bagian }}',
+                                            update(val) {
+                                                const oldVal = this.current;
+                                                this.current = val;
+                                                
+                                                fetch('/procurement/{{ $item->id }}/quick-update', {
+                                                    method: 'POST',
+                                                    headers: { 
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                                    },
+                                                    body: JSON.stringify({ field: 'bagian', value: val })
+                                                })
+                                                .then(r => r.json())
+                                                .then(data => {
+                                                    if(!data.success) {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Failed: ' + (data.message || 'Unknown'), type: 'error' } }));
+                                                        this.current = oldVal; // Revert
+                                                    } else {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Bagian updated', type: 'success' } }));
+                                                    }
+                                                });
+                                            }
+                                         }">
+                                            <select x-model="current" @change="update($event.target.value)" 
+                                                class="select select-ghost select-xs w-full max-w-[100px]"
+                                            >
+                                                <option value="">-</option>
+                                                @foreach($bagians as $case)
+                                                    <option value="{{ $case->value }}">{{ $case->label() }}</option>
+                                                @endforeach
+                                            </select>
+                                         </div>
+                                    @elseif($col->key == 'pg')
+                                         <div x-data="{ 
+                                            val: '{{ $item->pg }}',
+                                            update() {
+                                                 fetch('/procurement/{{ $item->id }}/quick-update', {
+                                                    method: 'POST',
+                                                    headers: { 
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                                    },
+                                                    body: JSON.stringify({ field: 'pg', value: this.val })
+                                                }).then(r => r.json()).then(d => { 
+                                                    if(!d.success) {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: d.message, type: 'error' } }));
+                                                    } else {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'PG updated', type: 'success' } }));
+                                                    }
+                                                });
+                                            }
+                                         }">
+                                            <input type="text" x-model="val" @blur="update()" @keydown.enter="update()" class="input input-ghost input-xs w-full max-w-[80px]">
+                                         </div>
+                                    @elseif($col->key == 'buyer')
+                                        @php
+                                            $buyerEnum = $item->buyer;
+                                            $color = $buyerEnum?->color() ?? '#f3f4f6';
+                                            $isDark = in_array($color, ['#3d3d3d', '#b10202', '#753800', '#473822', '#11734b', '#0a53a8', '#215a6c', '#5a3286']);
+                                        @endphp
+                                        <span class="badge font-semibold whitespace-nowrap" style="background-color: {{ $color }}; color: {{ $isDark ? 'white' : 'black' }}; border: none;">
+                                            {{ $buyerEnum?->label() ?? '-' }}
+                                        </span>
+                                    @elseif((str_starts_with($col->key, 'tanggal_') || in_array($col->key, ['tanggal_po', 'tanggal_datang', 'tanggal_status'])) && $item->{$col->key})
+                                         {{ \Carbon\Carbon::parse($item->{$col->key})->format('d M Y') }}
+                                    @elseif(str_starts_with($col->key, 'extra_'))
+                                        {{ $item->extra_attributes[$col->key] ?? '-' }}
+                                    @elseif($col->key == 'nilai')
+                                        {{ number_format($item->nilai, 0, ',', '.') }}
+                                    @else
+                                        {{ $item->{$col->key} }}
+                                    @endif
+                                </td>
+                            @endforeach
+                             <td>
+                                <a href="{{ route('procurement.show', $item->id) }}" class="btn btn-ghost btn-xs text-info">View</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                             @if(auth()->user()->isAdmin())
+                                <td></td>
+                             @endif
+                            <td colspan="{{ $columns->count() + 1 }}" class="text-center py-6 text-gray-500">No items found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Mobile Card View -->
     <div class="md:hidden space-y-4 mt-4">
         @foreach($items as $item)
-            <a href="{{ route('procurement.show', $item->id) }}" class="block bg-white rounded-2xl border border-gray-200 shadow-sm p-4 relative hover:bg-gray-50 transition-colors z-10 cursor-pointer">
-                <div class="pr-4">
+            <a href="{{ route('procurement.show', $item->id) }}" class="card bg-base-100 shadow-sm hover:shadow-md transition-all cursor-pointer">
+                <div class="card-body p-4">
                     <!-- Title -->
-                    <h3 class="text-lg font-bold text-gray-900 line-clamp-2 break-words">
+                    <h3 class="card-title text-base font-bold line-clamp-2">
                         {{ $item->nama_barang ?? 'No Name' }}
                     </h3>
                     
                     <!-- ID Dokumen -->
-                    <p class="text-sm text-gray-500 mt-1">
-                        ID Procurement: <span class="text-gray-700">{{ $item->external_id ?? '-' }}</span>
+                    <p class="text-sm opacity-70 mt-1">
+                        ID: <span class="font-medium">{{ $item->external_id ?? '-' }}</span>
                     </p>
 
                     <!-- Status -->
-                    <div class="mt-3">
-                        Status: <span class="text-sm font-medium text-gray-900">
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-xs font-semibold uppercase">Status:</span>
+                        <span class="badge badge-outline">
                              {{ $item->status instanceof \UnitEnum ? $item->status->label() : $item->status }}
                         </span>
                     </div>
@@ -383,14 +294,11 @@
         {{ $items->withQueryString()->links() }}
     </div>
 
-
-
-
 </div>
 
-
 @push('scripts')
-
-
+<style>
+/* Adjust pagination for DaisyUI if needed */
+</style>
 @endpush
 @endsection
