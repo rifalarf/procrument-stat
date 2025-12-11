@@ -13,20 +13,23 @@
     },
 
     deleteAll() {
-        if(confirm('WARNING: This will delete ALL data in the database. Are you absolutely sure?')) {
-            if(confirm('FINAL WARNING: This action cannot be undone. Are you absolutely really sure?')) {
-                let form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '{{ route('admin.procurement.delete-all') }}';
-                let csrf = document.createElement('input');
-                csrf.type = 'hidden';
-                csrf.name = '_token';
-                csrf.value = '{{ csrf_token() }}';
-                form.appendChild(csrf);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
+        confirmModal('DELETE ALL DATA', 'WARNING: This will delete ALL data in the database. Are you absolutely sure?', () => {
+             // Second level confirmation - delay slightly to allow first modal to close smoothly or just reuse
+             setTimeout(() => {
+                 confirmModal('FINAL WARNING', 'This action cannot be undone. Are you absolutely really sure?', () => {
+                    let form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ route('admin.procurement.delete-all') }}';
+                    let csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = '{{ csrf_token() }}';
+                    form.appendChild(csrf);
+                    document.body.appendChild(form);
+                    form.submit();
+                 });
+             }, 200);
+        });
     }
 }" class="space-y-6">
 
@@ -35,11 +38,16 @@
         <h1 class="text-2xl font-bold text-base-content">Dashboard Pengadaan</h1>
         <div class="flex flex-wrap items-center gap-2">
             @if(auth()->user()->isAdmin())
-                <div x-show="selected.length > 0" x-cloak>
-                    <form action="{{ route('admin.procurement.bulk-delete') }}" method="POST" id="bulk-delete-form" onsubmit="return confirm('Are you sure you want to delete selected items?')">
+                <div x-show="selected.length > 0" x-cloak class="flex gap-2">
+                     <template x-if="selected.length === 1">
+                        <a :href="'/procurement/' + selected[0]" class="btn btn-primary btn-sm text-white">
+                            Edit Item
+                        </a>
+                    </template>
+                    <form action="{{ route('admin.procurement.bulk-delete') }}" method="POST" id="bulk-delete-form">
                         @csrf
                         <input type="hidden" name="ids" :value="JSON.stringify(selected)">
-                        <button type="submit" class="btn btn-error btn-sm text-white">
+                        <button type="button" @click="confirmModal('Delete Selected', 'Are you sure you want to delete these items?', 'bulk-delete-form')" class="btn btn-error btn-sm text-white">
                             Delete Selected (<span x-text="selected.length"></span>)
                         </button>
                     </form>
@@ -59,7 +67,7 @@
         <!-- Row 1: Search -->
         <div class="form-control">
             <label class="label"><span class="label-text font-medium">Search</span></label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, ID Procurement, Name, PO..." class="input input-bordered w-full">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, ID Procurement, Name, User, PO..." class="input input-bordered w-full">
         </div>
 
         <!-- Row 2: Filters -->
@@ -82,15 +90,17 @@
                     @endforeach
                 </select>
             </div>
+            @if(!isset($allowedBagians) || count($allowedBagians) > 1)
             <div class="form-control">
                  <label class="label"><span class="label-text font-medium">Bagian</span></label>
                 <select name="bagian" class="select select-bordered w-full">
                     <option value="">All Bagian</option>
-                    @foreach($bagians as $bagian)
+                    @foreach($visibleBagians as $bagian)
                         <option value="{{ $bagian->value }}" {{ request('bagian') == $bagian->value ? 'selected' : '' }}>{{ $bagian->label() }}</option>
                     @endforeach
                 </select>
             </div>
+            @endif
             <div class="form-control">
                  <label class="label"><span class="label-text font-medium">User</span></label>
                 <select name="user" class="select select-bordered w-full">
@@ -118,10 +128,11 @@
                                 <input type="checkbox" @click="toggleAll()" :checked="selected.length === {{ $items->count() }} && {{ $items->count() }} > 0" class="checkbox checkbox-primary checkbox-sm">
                             </th>
                         @endif
+                        
                         @foreach($columns as $col)
                             <th class="whitespace-nowrap">{{ $col->label }}</th>
                         @endforeach
-                        <th>Actions</th>
+
                     </tr>
                 </thead>
                 <tbody>
@@ -133,10 +144,19 @@
                                 </td>
                             @endif
                             @foreach($columns as $col)
-                                <td class="{{ $col->key === 'nama_barang' ? 'min-w-[200px] whitespace-normal' : 'whitespace-nowrap' }}">
-                                    @if($col->key == 'status')
+                                <td class="{{ $col->key === 'nama_barang' ? 'min-w-[250px] whitespace-normal' : ($col->key === 'status' ? 'min-w-[150px]' : 'whitespace-nowrap') }}">
+                                    @if($col->key == 'nama_barang')
+                                        <a href="{{ route('procurement.show', $item->id) }}" class="link link-hover font-semibold text-primary">
+                                            {{ $item->nama_barang }}
+                                        </a>
+                                    @elseif($col->key == 'status')
                                         <div x-data="{ 
                                             current: '{{ $item->status instanceof \UnitEnum ? $item->status->value : $item->status }}',
+                                            options: {{ json_encode(\App\Enums\ProcurementStatusEnum::cases() ? collect(\App\Enums\ProcurementStatusEnum::cases())->mapWithKeys(function($s) {
+                                                $c = $s->color();
+                                                $isDark = in_array($c, ['#3d3d3d', '#b10202', '#753800', '#5a3286', '#0a53a8', '#473822', '#11734b', '#215a6c']); 
+                                                return [$s->value => ['label' => $s->label(), 'color' => $c, 'text' => $isDark ? '#fff' : '#000']];
+                                            }) : []) }},
                                             update(val) {
                                                 const oldVal = this.current;
                                                 this.current = val;
@@ -159,9 +179,19 @@
                                                     }
                                                 });
                                             }
-                                        }">
+                                        }" class="relative inline-block w-full max-w-full">
+                                            <!-- Visual Badge -->
+                                            <div class="badge h-auto py-2 px-3 w-full justify-start text-left font-semibold border-0 text-xs gap-2 shadow-sm"
+                                                 :style="{ backgroundColor: options[current]?.color || '#f3f4f6', color: options[current]?.text || '#000' }">
+                                                 <span x-text="options[current]?.label || current" class="truncate"></span>
+                                                 <!-- Chevron Icon for visual cue -->
+                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 opacity-50 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+
+                                            <!-- Hidden Select Overlay -->
                                             <select x-model="current" @change="update($event.target.value)" 
-                                                class="select select-bordered select-xs w-full max-w-[160px]"
+                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer appearance-none z-10"
+                                                title="Change Status"
                                             >
                                                 @foreach($statuses as $status)
                                                     <option value="{{ $status->value }}">{{ $status->label() }}</option>
@@ -169,40 +199,12 @@
                                             </select>
                                         </div>
                                     @elseif($col->key == 'bagian')
-                                        <div x-data="{ 
-                                            current: '{{ $item->bagian }}',
-                                            update(val) {
-                                                const oldVal = this.current;
-                                                this.current = val;
-                                                
-                                                fetch('/procurement/{{ $item->id }}/quick-update', {
-                                                    method: 'POST',
-                                                    headers: { 
-                                                        'Content-Type': 'application/json',
-                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                    },
-                                                    body: JSON.stringify({ field: 'bagian', value: val })
-                                                })
-                                                .then(r => r.json())
-                                                .then(data => {
-                                                    if(!data.success) {
-                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Failed: ' + (data.message || 'Unknown'), type: 'error' } }));
-                                                        this.current = oldVal; // Revert
-                                                    } else {
-                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Bagian updated', type: 'success' } }));
-                                                    }
-                                                });
-                                            }
-                                         }">
-                                            <select x-model="current" @change="update($event.target.value)" 
-                                                class="select select-ghost select-xs w-full max-w-[100px]"
-                                            >
-                                                <option value="">-</option>
-                                                @foreach($bagians as $case)
-                                                    <option value="{{ $case->value }}">{{ $case->label() }}</option>
-                                                @endforeach
-                                            </select>
-                                         </div>
+                                        @php
+                                            $bagianEnum = \App\Enums\BagianEnum::tryFrom($item->bagian);
+                                        @endphp
+                                        <span class="badge font-semibold whitespace-nowrap" style="background-color: {{ $bagianEnum?->color() ?? '#f3f4f6' }}; color: white; border: none;">
+                                            {{ $bagianEnum?->label() ?? $item->bagian ?? '-' }}
+                                        </span>
                                     @elseif($col->key == 'pg')
                                          <div x-data="{ 
                                             val: '{{ $item->pg }}',
@@ -245,16 +247,13 @@
                                     @endif
                                 </td>
                             @endforeach
-                             <td>
-                                <a href="{{ route('procurement.show', $item->id) }}" class="btn btn-ghost btn-xs text-info">View</a>
-                            </td>
                         </tr>
                     @empty
                         <tr>
                              @if(auth()->user()->isAdmin())
                                 <td></td>
                              @endif
-                            <td colspan="{{ $columns->count() + 1 }}" class="text-center py-6 text-gray-500">No items found.</td>
+                            <td colspan="{{ $columns->count() }}" class="text-center py-6 text-gray-500">No items found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -274,7 +273,7 @@
                     
                     <!-- ID Dokumen -->
                     <p class="text-sm opacity-70 mt-1">
-                        ID: <span class="font-medium">{{ $item->external_id ?? '-' }}</span>
+                        ID: <span class="font-medium">{{ $item->id_procurement ?? '-' }}</span>
                     </p>
 
                     <!-- Status -->

@@ -12,8 +12,8 @@
             <div class="divider text-lg font-semibold">Identification</div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">External ID</span></label>
-                    <input type="text" name="external_id" class="input input-bordered w-full">
+                    <label class="label"><span class="label-text font-medium">ID Procurement</span></label>
+                    <input type="text" name="id_procurement" class="input input-bordered w-full">
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Material Code *</span></label>

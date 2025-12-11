@@ -15,10 +15,11 @@ class ProcurementController extends Controller
             $query->where(function ($q) use ($search) {
                 // Adjust schema column names if needed. 'nama_vendor' is correct per schema.
                 $q->where('mat_code', 'like', "%{$search}%")
-                  ->orWhere('external_id', 'like', "%{$search}%") // Added ID Procurement
+                  ->orWhere('id_procurement', 'like', "%{$search}%") // Added ID Procurement
                   ->orWhere('nama_barang', 'like', "%{$search}%")
                   ->orWhere('nama_vendor', 'like', "%{$search}%") 
-                  ->orWhere('no_po', 'like', "%{$search}%");
+                  ->orWhere('no_po', 'like', "%{$search}%")
+                  ->orWhere('user_requester', 'like', "%{$search}%");
             });
         }
 
@@ -29,9 +30,48 @@ class ProcurementController extends Controller
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
-        if ($bagian = $request->input('bagian')) {
-            $query->where('bagian', $bagian);
+        
+        // Bagian filter logic with RBAC
+        $currentUser = auth()->user();
+        $allowedBagians = null; // null means all allowed
+
+        if ($currentUser && !$currentUser->isAdmin()) {
+            $access = $currentUser->bagian_access;
+            // Debug logging
+            // error_log('User: ' . $currentUser->email . ' Access: ' . json_encode($access));
+
+            if (is_array($access) && count($access) > 0) {
+                // Ensure values are strings to match Enum values/DB
+                $allowedBagians = array_map('strval', $access); 
+            } elseif (is_string($access) && !empty($access)) {
+                 $allowedBagians = [$access]; 
+            }
         }
+
+        if ($allowedBagians !== null) {
+            // RESTRICTED ACCESS
+            if (count($allowedBagians) === 1) {
+                 // CASE 1: Single Access -> Force Filter
+                 $query->where('bagian', $allowedBagians[0]);
+            } else {
+                 // CASE 2: Multi Access
+                 $requestedBagian = $request->input('bagian');
+                 
+                 if ($requestedBagian && in_array($requestedBagian, $allowedBagians)) {
+                     // User requested a valid visible bagian
+                     $query->where('bagian', $requestedBagian);
+                 } else {
+                     // Default view or invalid request -> Show ALL allowed
+                     $query->whereIn('bagian', $allowedBagians);
+                 }
+            }
+        } else {
+            // UNRESTRICTED ACCESS (Admin or No Restrictions Set)
+            if ($bagian = $request->input('bagian')) {
+                $query->where('bagian', $bagian);
+            }
+        }
+        
         if ($user = $request->input('user')) {
              $query->where('user_requester', $user);
         }
@@ -42,10 +82,21 @@ class ProcurementController extends Controller
         $statuses = \App\Enums\ProcurementStatusEnum::cases();
         $bagians = \App\Enums\BagianEnum::cases();
         
+        // Pass allowed bagians to view to filter the dropdown or hide it
+        // If allowedBagians is set and count == 1, we might want to hide the dropdown.
+        // If allowedBagians is set and count > 1, we show dropdown but only with allowed options?
+        // Let's pass $allowedBagians to view.
+        // If null, show all `BagianEnum::cases()`.
+        
+        $visibleBagians = $bagians;
+        if ($allowedBagians) {
+            $visibleBagians = array_filter($bagians, fn($b) => in_array($b->value, $allowedBagians));
+        }
+        
         // Get unique users for filter
         $users = \App\Models\ProcurementItem::distinct()->whereNotNull('user_requester')->orderBy('user_requester')->pluck('user_requester');
 
-        return view('procurement.index', compact('items', 'columns', 'buyers', 'statuses', 'bagians', 'users'));
+        return view('procurement.index', compact('items', 'columns', 'buyers', 'statuses', 'bagians', 'users', 'allowedBagians', 'visibleBagians'));
     }
 
     public function quickUpdate(Request $request, $id)
@@ -240,9 +291,9 @@ class ProcurementController extends Controller
         return redirect()->route('procurement.show', $id)->with('success', 'Item updated.');
     }
 
-    public function export()
+    public function export(Request $request)
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\ProcurementExport, 'procurement_items.xlsx');
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\ProcurementExport($request), 'procurement_items.xlsx');
     }
 
     public function create()
@@ -259,7 +310,7 @@ class ProcurementController extends Controller
         }
 
         $validated = $request->validate([
-            'external_id' => 'nullable|string',
+            'id_procurement' => 'nullable|string',
             'mat_code' => 'required|string|max:255',
             'nama_barang' => 'required|string',
             'qty' => 'required|numeric',

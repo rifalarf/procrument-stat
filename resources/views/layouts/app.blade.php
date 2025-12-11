@@ -11,6 +11,7 @@
 </head>
 <body class="bg-base-200 min-h-screen font-sans antialiased text-base-content">
     <x-confirm-modal />
+    
     <x-notification />
     
     <div class="navbar bg-base-100 shadow-sm border-b border-base-300">
@@ -22,7 +23,7 @@
               <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
                 @auth
                     @if(Auth::user()->isAdmin())
-                        <li><a href="{{ route('admin.users.index') }}">Users</a></li>
+                        <li><a href="{{ route('admin.users.index') }}">Management Users</a></li>
                     @endif
                 @endauth
               </ul>
@@ -36,9 +37,12 @@
             @auth
                 <span class="text-sm font-medium opacity-70 hidden md:inline-block">{{ Auth::user()->email }} ({{ Auth::user()->role }})</span>
                 @if(Auth::user()->isAdmin())
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-ghost hidden md:inline-flex">Users</a>
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-ghost hidden md:inline-flex">Management Users</a>
                 @endif
-                <!-- Logout form logic needed if proper auth -->
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-ghost text-error">Logout</button>
+                </form>
             @endauth
         </div>
     </div>

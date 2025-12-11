@@ -9,7 +9,7 @@
                 <p class="text-sm opacity-70">ID: {{ $item->id }} | {{ $item->mat_code }}</p>
             </div>
             <div>
-                <a href="{{ route('dashboard') }}" class="btn btn-ghost btn-sm">Back to Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="btn btn-error btn-sm">Back to Dashboard</a>
             </div>
         </div>
         
@@ -22,7 +22,7 @@
                     <!-- Static / Read-only Fields -->
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text font-medium opacity-70">ID Procurement</span></label>
-                        <div class="font-semibold">{{ $item->external_id }}</div>
+                        <div class="font-semibold">{{ $item->id_procurement }}</div>
                     </div>
                     
                     <div class="form-control w-full">

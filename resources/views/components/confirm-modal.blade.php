@@ -1,63 +1,41 @@
-<dialog 
-    id="confirm_modal"
-    x-data="{ 
-        title: '', 
-        message: '', 
-        confirmText: 'Confirm', 
-        cancelText: 'Cancel', 
-        onConfirm: null,
-        openModal() {
-            this.$el.showModal();
-        },
-        closeModal() {
-            this.$el.close();
-        }
-    }" 
-    @open-confirm-modal.window="
-        console.log('Confirm Modal Event Received:', $event.detail);
-        title = $event.detail.title || 'Confirm Action'; 
-        message = $event.detail.message || 'Are you sure?'; 
-        confirmText = $event.detail.confirmText || 'Confirm'; 
-        cancelText = $event.detail.cancelText || 'Cancel';
-        onConfirm = $event.detail.onConfirm;
-        openModal();
-    "
-    class="modal"
->
+<dialog id="confirm_modal" class="modal">
   <div class="modal-box">
-    <h3 class="font-bold text-lg" x-text="title"></h3>
-    <p class="py-4" x-text="message"></p>
-    
+    <h3 class="font-bold text-lg" id="confirm_title">Confirm Action</h3>
+    <p class="py-4" id="confirm_message">Are you sure?</p>
     <div class="modal-action">
-      <!-- Cancel Button -->
-      <button type="button" 
-              @click="closeModal()" 
-              class="btn" x-text="cancelText"></button>
-              
-      <!-- Confirm Button -->
-      <button type="button" 
-              @click="
-                console.log('Confirm clicked');
-                closeModal(); 
-                if (typeof onConfirm === 'function') {
-                    onConfirm();
-                } else if (typeof onConfirm === 'string') {
-                    const el = document.getElementById(onConfirm);
-                    if (el && typeof el.submit === 'function') {
-                        el.submit();
-                    } else {
-                        console.error('Form not found or not submittable:', onConfirm);
-                    }
-                } else {
-                    console.error('Invalid onConfirm handler:', onConfirm);
-                }
-              "
-              class="btn btn-error" x-text="confirmText"></button>
+      <form method="dialog">
+        <!-- if there is a button in form, it will close the modal -->
+        <button class="btn">Cancel</button>
+      </form>
+      <button class="btn btn-error" id="confirm_btn">Confirm</button>
     </div>
   </div>
-  
-  <!-- Backdrop click to close -->
-  <form method="dialog" class="modal-backdrop">
-    <button @click="closeModal()">close</button>
-  </form>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
 </dialog>
+
+<script>
+    window.confirmModal = function(title, message, onConfirm) {
+        document.getElementById('confirm_title').innerText = title;
+        document.getElementById('confirm_message').innerText = message;
+        
+        const confirmBtn = document.getElementById('confirm_btn');
+        // Remove existing listeners to prevent stacking
+        const newBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+        
+        newBtn.addEventListener('click', () => {
+            if (typeof onConfirm === 'function') {
+                onConfirm();
+            } else if(typeof onConfirm === 'string') {
+                 // Try to find form
+                 const el = document.getElementById(onConfirm);
+                 if(el && typeof el.submit === 'function') el.submit();
+            }
+            document.getElementById('confirm_modal').close();
+        });
+        
+        document.getElementById('confirm_modal').showModal();
+    }
+</script>

@@ -22,7 +22,7 @@ class ProcurementImport implements ToCollection, WithHeadingRow
             
             // Basic mapping
             \App\Models\ProcurementItem::create([
-                'external_id' => $row['external_id'] ?? $row['sheet_id'] ?? null,
+                'id_procurement' => $row['id_procurement'] ?? $row['external_id'] ?? $row['sheet_id'] ?? null,
                 'mat_code' => $row['mat_code'] ?? null,
                 'nama_barang' => $row['nama_barang'] ?? null,
                 'qty' => $row['qty'] ?? 0,

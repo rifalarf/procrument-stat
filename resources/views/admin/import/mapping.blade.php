@@ -12,7 +12,7 @@
         </div>
     </div>
     
-    <form action="{{ route('admin.import.process') }}" method="POST" onsubmit="return confirm('Are you sure you want to proceed with the import? This strategy will be applied to conflicts.');">
+    <form action="{{ route('admin.import.process') }}" method="POST" id="import-form">
         @csrf
         <input type="hidden" name="file_path" value="{{ $file_path }}">
 
@@ -95,7 +95,7 @@
             <a href="{{ route('admin.import.form') }}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Back
             </a>
-            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <button type="button" onclick="confirmModal('Confirm Import', 'Are you sure you want to proceed with the import? This strategy will be applied to conflicts.', 'import-form')" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Run Import System
             </button>
         </div>

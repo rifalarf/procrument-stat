@@ -4,7 +4,10 @@
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8" x-data>
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-semibold text-base-content">Manage Table Columns</h1>
-        <a href="{{ route('admin.columns.create') }}" class="btn btn-primary">Add New Column</a>
+        <div class="flex gap-2">
+            <a href="{{ route('dashboard') }}" class="btn btn-error btn-sm text-white">Back to Dashboard</a>
+            <a href="{{ route('admin.columns.create') }}" class="btn btn-primary btn-sm">Add New Column</a>
+        </div>
     </div>
 
     <div class="bg-base-100 shadow-xl rounded-box overflow-hidden">
@@ -40,10 +43,10 @@
                     <td class="flex space-x-2 justify-end">
                         <a href="{{ route('admin.columns.edit', $column->id) }}" class="btn btn-ghost btn-xs text-info">Edit</a>
                         @if($column->is_dynamic)
-                            <form action="{{ route('admin.columns.destroy', $column->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this column?');">
+                            <form action="{{ route('admin.columns.destroy', $column->id) }}" method="POST" id="delete-column-{{ $column->id }}">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-ghost btn-xs text-error">Delete</button>
+                                <button type="button" onclick="confirmModal('Delete Column', 'Are you sure you want to delete this column?', 'delete-column-{{ $column->id }}')" class="btn btn-ghost btn-xs text-error">Delete</button>
                             </form>
                         @endif
                     </td>

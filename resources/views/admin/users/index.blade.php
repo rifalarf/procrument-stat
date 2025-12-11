@@ -2,7 +2,10 @@
 
 @section('content')
 <div class="space-y-6 max-w-7xl mx-auto" x-data>
-    <h1 class="text-2xl font-bold text-base-content">Admin: User Whitelist Management</h1>
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-base-content">Admin: User Whitelist Management</h1>
+        <a href="{{ route('dashboard') }}" class="btn btn-error btn-sm text-white">Back to Dashboard</a>
+    </div>
 
     <!-- Add User Form -->
     <div class="card bg-base-100 shadow-xl">
@@ -21,6 +24,7 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
+
                 <div class="form-control w-full md:w-auto">
                     <button type="submit" class="btn btn-primary w-full md:w-auto">Add User</button>
                 </div>
@@ -36,6 +40,7 @@
                     <tr>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Bagian Access</th>
                         <th>Google ID</th>
                         <th>Actions</th>
                     </tr>
@@ -51,13 +56,28 @@
                                     <span class="badge badge-success text-white badge-sm">User</span>
                                  @endif
                             </td>
-                            <td class="opacity-70 text-sm">{{ $user->google_id ?? 'Not Linked' }}</td>
                             <td>
-                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this user?');">
+                                @if(is_array($user->bagian_access) && count($user->bagian_access) > 0)
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($user->bagian_access as $access)
+                                            <span class="badge badge-info badge-outline badge-sm">{{ $access }}</span>
+                                        @endforeach
+                                    </div>
+                                @elseif($user->bagian_access) <!-- Legacy or string fallback -->
+                                     <span class="badge badge-info badge-outline badge-sm">{{ $user->bagian_access }}</span>
+                                @else
+                                    <span class="text-xs opacity-50">All</span>
+                                @endif
+                            </td>
+                            <td class="opacity-70 text-sm">{{ $user->google_id ?? 'Not Linked' }}</td>
+                            <td class="flex gap-2">
+                                <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-ghost btn-xs text-info">Edit</a>
+                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" id="delete-user-{{ $user->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-ghost btn-xs text-error">Remove</button>
+                                    <button type="button" onclick="confirmModal('Delete User', 'Are you sure you want to remove this user?', 'delete-user-{{ $user->id }}')" class="btn btn-ghost btn-xs text-error">Remove</button>
                                 </form>
+                            </td>
                             </td>
                         </tr>
                     @endforeach

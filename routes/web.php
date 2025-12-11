@@ -19,6 +19,7 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [ProcurementController::class, 'index'])->name('dashboard');
     Route::get('/procurement/export', [ProcurementController::class, 'export'])->name('procurement.export');
@@ -30,7 +31,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Admin Routes
     Route::middleware([\App\Http\Middleware\EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
-         Route::resource('users', AdminController::class)->only(['index', 'store', 'destroy']);
+         Route::resource('users', AdminController::class)->only(['index', 'store', 'destroy', 'edit', 'update']);
          
          // New Import Flow
          Route::get('/import', [\App\Http\Controllers\AdminImportController::class, 'show'])->name('import.form');

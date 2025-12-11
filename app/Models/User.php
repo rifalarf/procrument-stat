@@ -24,6 +24,7 @@ class User extends Authenticatable
         'google_id',
         'role',
         'username', // Added for local admin login
+        'bagian_access',
     ];
 
     /**
@@ -46,6 +47,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'bagian_access' => 'array',
         ];
     }
 
