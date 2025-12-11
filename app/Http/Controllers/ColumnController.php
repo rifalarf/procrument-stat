@@ -17,22 +17,5 @@ class ColumnController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'label' => 'required|string',
-            'type' => 'required|in:text,number,date,select',
-            'options' => 'nullable|array',
-        ]);
 
-        $key = \Illuminate\Support\Str::slug($data['label'], '_');
-
-        \App\Models\TableColumn::create(array_merge($data, [
-            'key' => 'extra_' . $key,
-            'is_dynamic' => true,
-            'order' => \App\Models\TableColumn::max('order') + 1,
-        ]));
-
-        return back()->with('success', 'Column added.');
-    }
 }

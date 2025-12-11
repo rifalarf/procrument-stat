@@ -1,156 +1,150 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-        <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Procurement Detail</h3>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">ID: {{ $item->id }} | {{ $item->mat_code }}</p>
+<div class="card bg-base-100 shadow-xl overflow-hidden">
+    <div class="card-body p-0">
+        <div class="px-6 py-5 flex justify-between items-center bg-base-200">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Detail Pengadaan {{ $item->nama_barang }}</h1>
+                <p class="text-sm opacity-70">ID: {{ $item->id }} | {{ $item->mat_code }}</p>
+            </div>
+            <div>
+                <a href="{{ route('dashboard') }}" class="btn btn-error btn-sm">Kembali ke Dashboard</a>
+            </div>
         </div>
-        <div>
-            <a href="{{ route('dashboard') }}" class="text-sm text-gray-600 hover:text-gray-900">Back to Dashboard</a>
-        </div>
-    </div>
-    
-    <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
-        <form method="POST" action="{{ route('procurement.update', $item->id) }}">
-            @csrf
-            @method('PUT')
-            
-            <dl class="sm:divide-y sm:divide-gray-200">
-                <!-- Static / Read-only Fields -->
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">ID Procurement</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $item->external_id }}</dd>
-                </div>
-                <!-- ... Mat Code, Nama Barang ... -->
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Mat Code</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $item->mat_code }}</dd>
-                </div>
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Nama Barang</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $item->nama_barang }}</dd>
-                </div>
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Qty / UoM</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $item->qty }} {{ $item->um }}</dd>
-                </div>
-                 <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Nilai</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ number_format($item->nilai, 0, ',', '.') }}</dd>
-                </div>
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Vendor</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $item->nama_vendor }}</dd>
-                </div>
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">User Requester</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $item->user_requester }}</dd>
-                </div>
-                 <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Tgl Terima Dokumen</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $item->tanggal_terima_dokumen }}</dd>
+        
+        <div class="p-6">
+            <form method="POST" action="{{ route('procurement.update', $item->id) }}">
+                @csrf
+                @method('PUT')
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <!-- Static / Read-only Fields -->
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">ID Procurement</span></label>
+                        <div class="font-semibold">{{ $item->id_procurement }}</div>
+                    </div>
+                    
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">Mat Code</span></label>
+                        <div class="font-semibold">{{ $item->mat_code }}</div>
+                    </div>
+                    
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">Nama Barang</span></label>
+                        <div class="font-semibold">{{ $item->nama_barang }}</div>
+                    </div>
+                    
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">Qty / UoM</span></label>
+                        <div class="font-semibold">{{ $item->qty }} {{ $item->um }}</div>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">Nilai</span></label>
+                        <div class="font-semibold">{{ number_format($item->nilai, 0, ',', '.') }}</div>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">Vendor</span></label>
+                        <div class="font-semibold">{{ $item->nama_vendor }}</div>
+                    </div>
+                    
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">User Requester</span></label>
+                        <div class="font-semibold">{{ $item->user_requester }}</div>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium opacity-70">Tgl Terima Dokumen</span></label>
+                        <div class="font-semibold">{{ $item->tanggal_terima_dokumen }}</div>
+                    </div>
                 </div>
 
-                <!-- Editable Fields (Restricted by Policy) -->
-                <!-- Status -->
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
-                    <dt class="text-sm font-medium text-gray-500">Status</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        <select name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <div class="divider my-6">Kolom yang Dapat Diedit</div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-base-200 p-6 rounded-box">
+                    <!-- Status -->
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium">Status</span></label>
+                        <select name="status" class="select select-bordered w-full">
                             @foreach(\App\Enums\ProcurementStatusEnum::cases() as $status)
                                 <option value="{{ $status->value }}" {{ $item->status === $status || $item->status?->value === $status->value ? 'selected' : '' }}>{{ $status->label() }}</option>
                             @endforeach
                         </select>
-                    </dd>
-                </div>
-                
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
-                    <dt class="text-sm font-medium text-gray-500">PG</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        <input type="text" name="pg" value="{{ $item->pg }}" class="max-w-lg block w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
-                    </dd>
-                </div>
+                    </div>
+                    
+                    <div class="form-control w-full">
+                        <label class="label"><span class="label-text font-medium">PG</span></label>
+                        <input type="text" name="pg" value="{{ $item->pg }}" class="input input-bordered w-full">
+                    </div>
 
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
-                     <dt class="text-sm font-medium text-gray-500">Bagian</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        <select name="bagian" class="max-w-lg block w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
-                            <option value="">Select Bagian</option>
+                    <div class="form-control w-full">
+                         <label class="label"><span class="label-text font-medium">Bagian</span></label>
+                        <select name="bagian" class="select select-bordered w-full">
+                            <option value="">Pilih Bagian</option>
                             @foreach(\App\Enums\BagianEnum::cases() as $bagian)
                                 <option value="{{ $bagian->value }}" {{ $item->bagian === $bagian->value ? 'selected' : '' }}>{{ $bagian->label() }}</option>
                             @endforeach
                         </select>
-                    </dd>
-                </div>
+                    </div>
 
-                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
-                    <dt class="text-sm font-medium text-gray-500">Keterangan</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        <textarea name="keterangan" rows="3" class="shadow-sm block w-full sm:text-sm border-gray-300 rounded-md">{{ $item->keterangan }}</textarea>
-                    </dd>
-                </div>
+                    <div class="form-control w-full md:col-span-2">
+                        <label class="label"><span class="label-text font-medium">Keterangan</span></label>
+                        <textarea name="keterangan" rows="3" class="textarea textarea-bordered w-full">{{ $item->keterangan }}</textarea>
+                    </div>
 
-                <!-- Admin Only Fields (If Admin) -->
-                @if(auth()->user()->isAdmin())
-                     <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-yellow-50">
-                        <dt class="text-sm font-medium text-gray-500">Admin: Buyer</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            <select name="buyer" class="max-w-lg block w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
-                                <option value="">Select Buyer</option>
+                    <!-- Admin Only Fields (If Admin) -->
+                    @if(auth()->user()->isAdmin())
+                         <div class="col-span-full divider text-xs text-warning uppercase font-bold mt-4">Override Admin</div>
+                         <div class="form-control w-full">
+                            <label class="label"><span class="label-text font-medium text-warning">Admin: Pembeli</span></label>
+                            <select name="buyer" class="select select-bordered select-warning w-full">
+                                <option value="">Pilih Pembeli</option>
                                 @foreach(\App\Enums\BuyerEnum::cases() as $buyer)
                                     <option value="{{ $buyer->value }}" {{ $item->buyer === $buyer || $item->buyer?->value === $buyer->value ? 'selected' : '' }}>{{ $buyer->label() }}</option>
                                 @endforeach
                             </select>
-                        </dd>
-                    </div>
-                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-yellow-50">
-                        <dt class="text-sm font-medium text-gray-500">Admin: No PO</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            <input type="text" name="no_po" value="{{ $item->no_po }}" class="max-w-lg block w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
-                        </dd>
-                    </div>
-                @endif
-
-                <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Save Changes
-                    </button>
+                        </div>
+                        <div class="form-control w-full">
+                            <label class="label"><span class="label-text font-medium text-warning">Admin: No PO</span></label>
+                            <input type="text" name="no_po" value="{{ $item->no_po }}" class="input input-bordered input-warning w-full">
+                        </div>
+                    @endif
                 </div>
 
-            </dl>
-        </form>
+                <div class="card-actions justify-end mt-6">
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+
+            </form>
+        </div>
     </div>
 </div>
 
 <!-- Logs Section -->
-<div class="mt-8">
-    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">History / Logs</h3>
-    <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($item->logs->sortByDesc('changed_at') as $log)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $log->changed_at }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $log->changed_by }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $log->change_detail }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<div class="card bg-base-100 shadow-xl mt-8">
+    <div class="card-body">
+        <h3 class="card-title text-lg font-bold mb-4">History / Logs</h3>
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th class="whitespace-nowrap">Date</th>
+                        <th class="whitespace-nowrap">User</th>
+                        <th class="w-full">Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($item->logs->sortByDesc('changed_at') as $log)
+                        <tr>
+                            <td class="whitespace-nowrap font-mono text-xs">{{ $log->changed_at }}</td>
+                            <td class="whitespace-nowrap font-medium">{{ $log->changed_by }}</td>
+                            <td>{{ $log->change_detail }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

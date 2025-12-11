@@ -9,7 +9,8 @@ class AdminController extends Controller
     public function index()
     {
         $users = \App\Models\User::all();
-        return view('admin.users.index', compact('users'));
+        $bagians = \App\Enums\BagianEnum::cases();
+        return view('admin.users.index', compact('users', 'bagians'));
     }
 
     public function store(Request $request)
@@ -21,26 +22,36 @@ class AdminController extends Controller
             'name' => 'New User', // Placeholder until login
             'password' => bcrypt('password'), // Dummy password
             'role' => $request->role ?? 'user',
+            'bagian_access' => $request->bagian_access ? (is_array($request->bagian_access) ? $request->bagian_access : [$request->bagian_access]) : null,
         ]);
 
         return back()->with('success', 'User added to whitelist.');
     }
 
-    public function showImportForm()
+    public function edit($id)
     {
-        return view('admin.import');
+        $user = \App\Models\User::findOrFail($id);
+        $bagians = \App\Enums\BagianEnum::cases();
+        return view('admin.users.edit', compact('user', 'bagians'));
     }
 
-    public function import(Request $request)
+    public function update(Request $request, $id)
     {
+        $user = \App\Models\User::findOrFail($id);
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls',
+            'role' => 'required|in:admin,user',
+            'bagian_access' => 'nullable|array',
         ]);
 
-        \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ProcurementImport, $request->file('file'));
+        $user->update([
+            'role' => $request->role,
+            'bagian_access' => $request->bagian_access,
+        ]);
 
-        return back()->with('success', 'Data imported successfully.');
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
+
+
 
     public function destroy($id)
     {

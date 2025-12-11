@@ -4,34 +4,6 @@
 <div x-data="{
     selected: [],
     allSelected: false,
-    resizing: false,
-
-    startResize(event, colId) {
-        this.resizing = true;
-        let th = event.target.closest('th');
-        let startX = event.pageX;
-        let startWidth = th.offsetWidth;
-        
-        // Prevent text selection
-        document.body.style.userSelect = 'none';
-        document.body.style.cursor = 'col-resize';
-        
-        let onMouseMove = (e) => {
-            let newWidth = Math.max(80, startWidth + (e.pageX - startX));
-            this.colWidths[colId] = newWidth + 'px';
-        };
-        
-        let onMouseUp = () => {
-             this.resizing = false;
-             document.body.style.userSelect = '';
-             document.body.style.cursor = '';
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
-        
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    },
     toggleAll() {
         if (this.selected.length === {{ $items->count() }}) {
             this.selected = [];
@@ -39,298 +11,375 @@
             this.selected = [{{ $items->pluck('id')->implode(',') }}];
         }
     },
-    deleteSelected() {
-        if (!confirm('Are you sure you want to delete ' + this.selected.length + ' items?')) return;
-        
-        fetch('{{ route('admin.procurement.bulk-delete') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            body: JSON.stringify({ ids: this.selected })
-        }).then(res => {
-            if(res.ok) {
-                window.location.reload();
-            } else {
-                alert('Failed to delete');
-            }
-        });
-    },
-    deleteAll() {
-        if (!confirm('WARNING: This will delete ALL data in the database. Are you sure?')) return;
-        if (!confirm('Double Check: Are you absolutely really sure?')) return;
-        
-        // Form submit for delete all to handle it cleanly via standard controller action or fetch
-        // Fetch is fine but redirect is needed.
-        let form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{{ route('admin.procurement.delete-all') }}';
-        
-        let csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = '_token';
-        csrf.value = '{{ csrf_token() }}';
-        form.appendChild(csrf);
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-}" x-init="initResize();" class="space-y-6">
 
+    deleteAll() {
+        confirmModal('HAPUS SEMUA DATA', 'PERINGATAN: Ini akan menghapus SEMUA data di database. Apakah Anda benar-benar yakin?', () => {
+             // Second level confirmation - delay slightly to allow first modal to close smoothly or just reuse
+             setTimeout(() => {
+                 const input = prompt('FINAL SAFETY CHECK: Ketik "hapus semua data" untuk konfirmasi.');
+                 if (input === 'hapus semua data') {
+                    let form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ route('admin.procurement.delete-all') }}';
+                    let csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = '{{ csrf_token() }}';
+                    form.appendChild(csrf);
+                    document.body.appendChild(form);
+                    form.submit();
+                 }
+             }, 200);
+        });
+    }
+}" class="space-y-6">
 
     <!-- Header Actions -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-        <h1 class="text-2xl font-bold text-gray-800">Dashboard Pengadaan</h1>
-        <div class="flex items-center space-x-2">
+        <h1 class="text-2xl font-bold text-base-content">Pelacak Pengadaan</h1>
+        <div class="flex flex-wrap items-center gap-2">
             @if(auth()->user()->isAdmin())
-                <div x-show="selected.length > 0" x-cloak class="flex items-center space-x-2 mr-4">
-                    <button @click="deleteSelected()" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700 shadow-sm transition">
-                        Delete Selected (<span x-text="selected.length"></span>)
-                    </button>
+                <div x-show="selected.length > 0" x-cloak class="flex gap-2">
+                     <template x-if="selected.length === 1">
+                        <a :href="'/procurement/' + selected[0]" class="btn btn-primary btn-sm text-white">
+                            Edit Item
+                        </a>
+                    </template>
+                    <form action="{{ route('admin.procurement.bulk-delete') }}" method="POST" id="bulk-delete-form">
+                        @csrf
+                        <input type="hidden" name="ids" :value="JSON.stringify(selected)">
+                        <button type="button" @click="confirmModal('Hapus Terpilih', 'Apakah Anda yakin ingin menghapus item ini?', 'bulk-delete-form')" class="btn btn-error btn-sm text-white">
+                            Hapus Terpilih (<span x-text="selected.length"></span>)
+                        </button>
+                    </form>
                 </div>
 
-                <a href="{{ route('admin.import.form') }}" class="bg-teal-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-teal-700 shadow-sm transition">Import Excel</a>
-                <a href="{{ route('admin.columns.index') }}" class="bg-gray-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-gray-700 shadow-sm transition">Columns</a>
-                <a href="{{ route('procurement.create') }}" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700 shadow-sm transition">+ New Item</a>
-
+                <a href="{{ route('admin.import.form') }}" class="btn btn-accent btn-sm text-white">Import Excel</a>
+                <a href="{{ route('admin.columns.index') }}" class="btn btn-neutral btn-sm text-white">Kolom</a>
+                <a href="{{ route('procurement.create') }}" class="btn btn-primary btn-sm text-white">+ Buat Baru</a>
             @endif
             <!-- Export Button -->
-            <a href="{{ route('procurement.export') }}" class="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-green-700 shadow-sm transition">Export XLSX</a>
+            <a href="{{ route('procurement.export') }}" class="btn btn-success btn-sm text-white">Export XLSX</a>
         </div>
     </div>
 
     <!-- Filters & Search -->
-    <!-- Filters & Search -->
-    <form method="GET" action="{{ route('dashboard') }}" class="bg-white p-4 rounded shadow space-y-4">
+    <form method="GET" action="{{ route('dashboard') }}" class="bg-base-100 p-4 rounded-box shadow space-y-4">
         <!-- Row 1: Search -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Search</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, ID Procurement, Name, PO..." class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+        <div class="form-control">
+            <label class="label"><span class="label-text font-medium">Cari</span></label>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, ID Procurement, Nama, User, PO..." class="input input-bordered w-full">
         </div>
 
         <!-- Row 2: Filters -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Buyer</label>
-                <select name="buyer" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
-                    <option value="">All Buyers</option>
-                    @foreach($buyers as $buyer)
-                        <option value="{{ $buyer->value }}" {{ request('buyer') == $buyer->value ? 'selected' : '' }}>{{ $buyer->label() }}</option>
-                    @endforeach
-                </select>
+            <div class="form-control" x-data="searchableSelect({ 
+                    options: {{ json_encode(collect($buyers)->map(fn($b) => ['value' => $b->value, 'label' => $b->label()])->values()) }},
+                    value: '{{ request('buyer') }}',
+                    placeholder: 'Pilih Buyer'
+                })">
+                <label class="label"><span class="label-text font-medium">Buyer</span></label>
+                <div class="relative" @click.outside="isOpen = false">
+                    <input type="hidden" name="buyer" :value="selectedVal">
+                    
+                    <div @click="toggle()" class="input input-bordered w-full flex items-center justify-between cursor-pointer">
+                        <span x-text="selectedLabel || 'Semua Buyer'" :class="{'text-gray-400': !selectedLabel}"></span>
+                        <div class="flex items-center gap-2">
+                             <template x-if="selectedVal">
+                                <button type="button" @click.stop="clear()" class="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-gray-600">✕</button>
+                             </template>
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50 transition-transform" :class="isOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div x-show="isOpen" x-cloak class="absolute top-full left-0 w-full z-50 bg-base-100 border border-base-300 rounded-box shadow-xl mt-1 max-h-60 overflow-y-auto">
+                        <div class="p-2 sticky top-0 bg-base-100 z-10">
+                            <input x-ref="searchInput" x-model="search" type="text" class="input input-sm input-bordered w-full" placeholder="Cari...">
+                        </div>
+                        <ul class="menu menu-compact p-2">
+                            <template x-for="option in filteredOptions" :key="option.value">
+                                <li>
+                                    <a @click="select(option)" 
+                                       :class="{'active': selectedVal == option.value}">
+                                        <span x-text="option.label"></span>
+                                    </a>
+                                </li>
+                            </template>
+                             <li x-show="filteredOptions.length === 0" class="text-gray-500 p-2 text-center text-sm">Tidak ada hasil</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
-                    <option value="">All Status</option>
-                    @foreach($statuses as $status)
-                        <option value="{{ $status->value }}" {{ request('status') == $status->value ? 'selected' : '' }}>{{ $status->label() }}</option>
-                    @endforeach
-                </select>
+            <div class="form-control" x-data="searchableSelect({ 
+                    options: {{ json_encode(collect($statuses)->map(fn($s) => ['value' => $s->value, 'label' => $s->label()])->values()) }},
+                    value: '{{ request('status') }}',
+                    placeholder: 'Pilih Status'
+                })">
+                 <label class="label"><span class="label-text font-medium">Status</span></label>
+                 <div class="relative" @click.outside="isOpen = false">
+                    <input type="hidden" name="status" :value="selectedVal">
+                    
+                    <div @click="toggle()" class="input input-bordered w-full flex items-center justify-between cursor-pointer">
+                        <span x-text="selectedLabel || 'Semua Status'" :class="{'text-gray-400': !selectedLabel}"></span>
+                         <div class="flex items-center gap-2">
+                             <template x-if="selectedVal">
+                                <button type="button" @click.stop="clear()" class="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-gray-600">✕</button>
+                             </template>
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50 transition-transform" :class="isOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div x-show="isOpen" x-cloak class="absolute top-full left-0 w-full z-50 bg-base-100 border border-base-300 rounded-box shadow-xl mt-1 max-h-60 overflow-y-auto">
+                        <div class="p-2 sticky top-0 bg-base-100 z-10">
+                            <input x-ref="searchInput" x-model="search" type="text" class="input input-sm input-bordered w-full" placeholder="Cari...">
+                        </div>
+                        <ul class="menu menu-compact p-2">
+                            <template x-for="option in filteredOptions" :key="option.value">
+                                <li>
+                                    <a @click="select(option)" 
+                                       :class="{'active': selectedVal == option.value}">
+                                        <span x-text="option.label"></span>
+                                    </a>
+                                </li>
+                            </template>
+                            <li x-show="filteredOptions.length === 0" class="text-gray-500 p-2 text-center text-sm">Tidak ada hasil</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Bagian</label>
-                <select name="bagian" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
-                    <option value="">All Bagian</option>
-                    @foreach($bagians as $bagian)
-                        <option value="{{ $bagian->value }}" {{ request('bagian') == $bagian->value ? 'selected' : '' }}>{{ $bagian->label() }}</option>
-                    @endforeach
-                </select>
+            @if(!isset($allowedBagians) || count($allowedBagians) > 1)
+            <div class="form-control" x-data="searchableSelect({ 
+                    options: {{ json_encode(collect($visibleBagians)->map(fn($b) => ['value' => $b->value, 'label' => $b->label()])->values()) }},
+                    value: '{{ request('bagian') }}',
+                    placeholder: 'Pilih Bagian'
+                })">
+                 <label class="label"><span class="label-text font-medium">Bagian</span></label>
+                 <div class="relative" @click.outside="isOpen = false">
+                    <input type="hidden" name="bagian" :value="selectedVal">
+                    
+                    <div @click="toggle()" class="input input-bordered w-full flex items-center justify-between cursor-pointer">
+                        <span x-text="selectedLabel || 'Semua Bagian'" :class="{'text-gray-400': !selectedLabel}"></span>
+                        <div class="flex items-center gap-2">
+                             <template x-if="selectedVal">
+                                <button type="button" @click.stop="clear()" class="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-gray-600">✕</button>
+                             </template>
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50 transition-transform" :class="isOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div x-show="isOpen" x-cloak class="absolute top-full left-0 w-full z-50 bg-base-100 border border-base-300 rounded-box shadow-xl mt-1 max-h-60 overflow-y-auto">
+                        <div class="p-2 sticky top-0 bg-base-100 z-10">
+                            <input x-ref="searchInput" x-model="search" type="text" class="input input-sm input-bordered w-full" placeholder="Cari...">
+                        </div>
+                        <ul class="menu menu-compact p-2">
+                            <template x-for="option in filteredOptions" :key="option.value">
+                                <li>
+                                    <a @click="select(option)" 
+                                       :class="{'active': selectedVal == option.value}">
+                                        <span x-text="option.label"></span>
+                                    </a>
+                                </li>
+                            </template>
+                            <li x-show="filteredOptions.length === 0" class="text-gray-500 p-2 text-center text-sm">Tidak ada hasil</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">User</label>
-                <select name="user" class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm p-2 border">
-                    <option value="">All Users</option>
-                    @foreach($users as $user)
-                        <option value="{{ $user }}" {{ request('user') == $user ? 'selected' : '' }}>{{ $user }}</option>
-                    @endforeach
-                </select>
+            @endif
+            <div class="form-control" x-data="searchableSelect({ 
+                    options: {{ json_encode($users->map(fn($u) => ['value' => $u, 'label' => $u])->values()) }},
+                    value: '{{ request('user') }}',
+                    placeholder: 'Pilih User'
+                })">
+                 <label class="label"><span class="label-text font-medium">User</span></label>
+                 <div class="relative" @click.outside="isOpen = false">
+                    <input type="hidden" name="user" :value="selectedVal">
+                    
+                    <div @click="toggle()" class="input input-bordered w-full flex items-center justify-between cursor-pointer">
+                        <span x-text="selectedLabel || 'Semua User'" :class="{'text-gray-400': !selectedLabel}"></span>
+                        <div class="flex items-center gap-2">
+                             <template x-if="selectedVal">
+                                <button type="button" @click.stop="clear()" class="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-gray-600">✕</button>
+                             </template>
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50 transition-transform" :class="isOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div x-show="isOpen" x-cloak class="absolute top-full left-0 w-full z-50 bg-base-100 border border-base-300 rounded-box shadow-xl mt-1 max-h-60 overflow-y-auto">
+                        <div class="p-2 sticky top-0 bg-base-100 z-10">
+                            <input x-ref="searchInput" x-model="search" type="text" class="input input-sm input-bordered w-full" placeholder="Cari...">
+                        </div>
+                        <ul class="menu menu-compact p-2">
+                            <template x-for="option in filteredOptions" :key="option.value">
+                                <li>
+                                    <a @click="select(option)" 
+                                       :class="{'active': selectedVal == option.value}">
+                                        <span x-text="option.label"></span>
+                                    </a>
+                                </li>
+                            </template>
+                            <li x-show="filteredOptions.length === 0" class="text-gray-500 p-2 text-center text-sm">Tidak ada hasil</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="flex items-end">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 w-full">Filter</button>
+                <button type="submit" class="btn btn-primary w-full">Filter</button>
             </div>
         </div>
     </form>
 
     <!-- Desktop Table View -->
-    <div class="hidden md:block bg-white shadow rounded overflow-hidden overflow-x-auto" :class="{'cursor-col-resize select-none': resizing}">
-        <table class="min-w-full table-fixed divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr id="table-headers" class="border-b border-gray-200">
-                    @if(auth()->user()->isAdmin())
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10 border-r border-gray-200">
-                            <input type="checkbox" @click="toggleAll()" :checked="selected.length === {{ $items->count() }} && {{ $items->count() }} > 0" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        </th>
-                    @endif
-                    @foreach($columns as $col)
-                        <th 
-                            data-id="{{ $col->id }}" 
-                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider group relative border-r border-gray-200" 
-
-                            :style="'width: ' + (colWidths['{{ $col->id }}'] || 'auto') + '; min-width: ' + ('{{ $col->key }}' === 'status' ? '350px' : ('{{ $col->key }}' === 'bagian' ? '250px' : '100px')) + '; position: relative;'"
-                        >
-                            <div class="flex items-center justify-between h-full w-full">
-                                <span class="truncate pr-4">{{ $col->label }}</span>
-                                <!-- Robust Resize Handle -->
-                                <div 
-                                    class="absolute inset-y-0 right-0 w-4 cursor-col-resize z-50 flex items-center justify-center hover:bg-blue-50 transition-colors"
-                                    @mousedown.stop.prevent="startResize($event, '{{ $col->id }}')"
-                                    title="Drag to resize"
-                                >
-                                    <!-- Permanent visible line -->
-                                    <div class="h-6 w-0.5 bg-gray-400"></div> 
-                                </div>
-                            </div>
-
-                        </th>
-                    @endforeach
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($items as $item)
+    <div class="hidden md:block bg-base-100 shadow rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <!-- head -->
+                <thead class="bg-base-200">
                     <tr>
                         @if(auth()->user()->isAdmin())
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                <input type="checkbox" value="{{ $item->id }}" x-model="selected" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            </td>
+                            <th class="w-10">
+                                <input type="checkbox" @click="toggleAll()" :checked="selected.length === {{ $items->count() }} && {{ $items->count() }} > 0" class="checkbox checkbox-primary checkbox-sm">
+                            </th>
                         @endif
+                        
                         @foreach($columns as $col)
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                @if($col->key == 'status')
-                                    <div x-data="{ 
-                                        current: '{{ $item->status instanceof \UnitEnum ? $item->status->value : $item->status }}',
-                                        update(val) {
-                                            const oldVal = this.current;
-                                            this.current = val;
-                                            
-                                            fetch('/procurement/{{ $item->id }}/quick-update', {
-                                                method: 'POST',
-                                                headers: { 
-                                                    'Content-Type': 'application/json',
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                },
-                                                body: JSON.stringify({ field: 'status', value: val })
-                                            })
-                                            .then(r => r.json())
-                                            .then(data => {
-                                                if(!data.success) {
-                                                    alert('Failed: ' + (data.message || 'Unknown'));
-                                                    this.current = oldVal; 
-                                                }
-                                            });
-                                        }
-                                    }">
-                                        <select x-model="current" @change="update($event.target.value)" 
-                                            class="text-sm font-semibold rounded px-2 py-1 min-w-[200px] border-gray-300 focus:ring-2 focus:ring-indigo-500 cursor-pointer bg-white text-gray-900"
-                                        >
-                                            @foreach($statuses as $status)
-                                                <option value="{{ $status->value }}">{{ $status->label() }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @elseif($col->key == 'bagian')
-                                    <div x-data="{ 
-                                        current: '{{ $item->bagian }}',
-                                        update(val) {
-                                            const oldVal = this.current;
-                                            this.current = val;
-                                            
-                                            fetch('/procurement/{{ $item->id }}/quick-update', {
-                                                method: 'POST',
-                                                headers: { 
-                                                    'Content-Type': 'application/json',
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                },
-                                                body: JSON.stringify({ field: 'bagian', value: val })
-                                            })
-                                            .then(r => r.json())
-                                            .then(data => {
-                                                if(!data.success) {
-                                                    alert('Failed: ' + (data.message || 'Unknown'));
-                                                    this.current = oldVal; // Revert
-                                                }
-                                            });
-                                        }
-                                     }">
-                                        <select x-model="current" @change="update($event.target.value)" 
-                                            class="text-sm border-gray-300 rounded p-1 min-w-[150px] bg-transparent hover:bg-gray-50 focus:bg-white transition-colors cursor-pointer"
-                                        >
-                                            <option value="">-</option>
-                                            @foreach($bagians as $case)
-                                                <option value="{{ $case->value }}">{{ $case->label() }}</option>
-                                            @endforeach
-                                        </select>
-                                     </div>
-                                @elseif($col->key == 'pg')
-                                     <div x-data="{ 
-                                        val: '{{ $item->pg }}',
-                                        update() {
-                                             fetch('/procurement/{{ $item->id }}/quick-update', {
-                                                method: 'POST',
-                                                headers: { 
-                                                    'Content-Type': 'application/json',
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                                },
-                                                body: JSON.stringify({ field: 'pg', value: this.val })
-                                            }).then(r => r.json()).then(d => { if(!d.success) alert(d.message); });
-                                        }
-                                     }">
-                                        <input type="text" x-model="val" @blur="update()" @keydown.enter="update()" class="text-sm border-gray-300 rounded p-1 w-full bg-transparent hover:bg-gray-50 focus:bg-white transition-colors">
-                                     </div>
-                                @elseif($col->key == 'buyer')
-                                    @php
-                                        $buyerEnum = $item->buyer; // Since it's cast, this is an Enum instance or null
-                                        $color = $buyerEnum?->color() ?? '#f3f4f6';
-                                        $isDark = in_array($color, ['#3d3d3d', '#b10202', '#753800', '#473822', '#11734b', '#0a53a8', '#215a6c', '#5a3286']);
-                                        $textColor = $isDark ? 'text-white' : 'text-gray-800';
-                                    @endphp
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $textColor }}" style="background-color: {{ $color }}">
-                                        {{ $buyerEnum?->label() ?? '-' }}
-                                    </span>
-                                @elseif((str_starts_with($col->key, 'tanggal_') || in_array($col->key, ['tanggal_po', 'tanggal_datang', 'tanggal_status'])) && $item->{$col->key})
-                                     {{ \Carbon\Carbon::parse($item->{$col->key})->format('d M Y') }}
-                                @elseif(str_starts_with($col->key, 'extra_'))
-                                    {{ $item->extra_attributes[$col->key] ?? '-' }}
-                                @elseif($col->key == 'nilai')
-                                    {{ number_format($item->nilai, 0, ',', '.') }}
-                                @else
-                                    {{ $item->{$col->key} }}
-                                @endif
-                            </td>
+                            <th class="whitespace-nowrap">{{ $col->label }}</th>
                         @endforeach
-                         <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="{{ route('procurement.show', $item->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
-                        </td>
+
                     </tr>
-                @empty
-                    <tr>
-                         @if(auth()->user()->isAdmin())
-                            <td></td>
-                         @endif
-                        <td colspan="{{ $columns->count() + 1 }}" class="px-6 py-4 text-center text-gray-500">No items found.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse($items as $item)
+                        <tr class="hover">
+                            @if(auth()->user()->isAdmin())
+                                <td>
+                                    <input type="checkbox" value="{{ $item->id }}" x-model="selected" class="checkbox checkbox-primary checkbox-sm">
+                                </td>
+                            @endif
+                            @foreach($columns as $col)
+                                <td class="{{ $col->key === 'nama_barang' ? 'min-w-[250px] whitespace-normal' : ($col->key === 'status' ? 'min-w-[150px]' : 'whitespace-nowrap') }}">
+                                    @if($col->key == 'nama_barang')
+                                        <a href="{{ route('procurement.show', $item->id) }}" class="link link-hover font-semibold text-primary">
+                                            {{ $item->nama_barang }}
+                                        </a>
+                                    @elseif($col->key == 'status')
+                                        <div x-data="{ 
+                                            current: '{{ $item->status instanceof \UnitEnum ? $item->status->value : $item->status }}',
+                                            options: {{ json_encode(\App\Enums\ProcurementStatusEnum::cases() ? collect(\App\Enums\ProcurementStatusEnum::cases())->mapWithKeys(function($s) {
+                                                $c = $s->color();
+                                                $isDark = in_array($c, ['#3d3d3d', '#b10202', '#753800', '#5a3286', '#0a53a8', '#473822', '#11734b', '#215a6c']); 
+                                                return [$s->value => ['label' => $s->label(), 'color' => $c, 'text' => $isDark ? '#fff' : '#000']];
+                                            }) : []) }},
+                                            update(val) {
+                                                const oldVal = this.current;
+                                                this.current = val;
+                                                
+                                                fetch('/procurement/{{ $item->id }}/quick-update', {
+                                                    method: 'POST',
+                                                    headers: { 
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                                    },
+                                                    body: JSON.stringify({ field: 'status', value: val })
+                                                })
+                                                .then(r => r.json())
+                                                .then(data => {
+                                                    if(!data.success) {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Failed: ' + (data.message || 'Unknown'), type: 'error' } }));
+                                                        this.current = oldVal; 
+                                                    } else {
+                                                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Status updated', type: 'success' } }));
+                                                    }
+                                                });
+                                            }
+                                        }" class="relative inline-block w-full max-w-full">
+                                            <!-- Visual Badge -->
+                                            <div class="badge h-auto py-2 px-3 w-full justify-start text-left font-semibold border-0 text-xs gap-2 shadow-sm"
+                                                 :style="{ backgroundColor: options[current]?.color || '#f3f4f6', color: options[current]?.text || '#000' }">
+                                                 <span x-text="options[current]?.label || current" class="truncate"></span>
+                                                 <!-- Chevron Icon for visual cue -->
+                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 opacity-50 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </div>
+
+                                            <!-- Hidden Select Overlay -->
+                                            <select x-model="current" @change="update($event.target.value)" 
+                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer appearance-none z-10"
+                                                title="Ubah Status"
+                                            >
+                                                @foreach($statuses as $status)
+                                                    <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @elseif($col->key == 'bagian')
+                                        @php
+                                            $bagianEnum = \App\Enums\BagianEnum::tryFrom($item->bagian);
+                                        @endphp
+                                        <span class="badge font-semibold whitespace-nowrap" style="background-color: {{ $bagianEnum?->color() ?? '#f3f4f6' }}; color: white; border: none;">
+                                            {{ $bagianEnum?->label() ?? $item->bagian ?? '-' }}
+                                        </span>
+
+                                    @elseif($col->key == 'buyer')
+                                        @php
+                                            $buyerEnum = $item->buyer;
+                                            $color = $buyerEnum?->color() ?? '#f3f4f6';
+                                            $isDark = in_array($color, ['#3d3d3d', '#b10202', '#753800', '#473822', '#11734b', '#0a53a8', '#215a6c', '#5a3286']);
+                                        @endphp
+                                        <span class="badge font-semibold whitespace-nowrap" style="background-color: {{ $color }}; color: {{ $isDark ? 'white' : 'black' }}; border: none;">
+                                            {{ $buyerEnum?->label() ?? '-' }}
+                                        </span>
+                                    @elseif((str_starts_with($col->key, 'tanggal_') || in_array($col->key, ['tanggal_po', 'tanggal_datang', 'tanggal_status'])) && $item->{$col->key})
+                                         {{ \Carbon\Carbon::parse($item->{$col->key})->format('d M Y') }}
+                                    @elseif(str_starts_with($col->key, 'extra_'))
+                                        {{ $item->extra_attributes[$col->key] ?? '-' }}
+                                    @elseif($col->key == 'nilai')
+                                        {{ number_format($item->nilai, 0, ',', '.') }}
+                                    @else
+                                        {{ $item->{$col->key} }}
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
+                    @empty
+                        <tr>
+                             @if(auth()->user()->isAdmin())
+                                <td></td>
+                             @endif
+                            <td colspan="{{ $columns->count() }}" class="text-center py-6 text-gray-500">Tidak ada data ditemukan.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Mobile Card View -->
     <div class="md:hidden space-y-4 mt-4">
         @foreach($items as $item)
-            <a href="{{ route('procurement.show', $item->id) }}" class="block bg-white rounded-2xl border border-gray-200 shadow-sm p-4 relative hover:bg-gray-50 transition-colors z-10 cursor-pointer">
-                <div class="pr-4">
+            <a href="{{ route('procurement.show', $item->id) }}" class="card bg-base-100 shadow-sm hover:shadow-md transition-all cursor-pointer">
+                <div class="card-body p-4">
                     <!-- Title -->
-                    <h3 class="text-lg font-bold text-gray-900 line-clamp-2 break-words">
+                    <h3 class="card-title text-base font-bold line-clamp-2">
                         {{ $item->nama_barang ?? 'No Name' }}
                     </h3>
                     
                     <!-- ID Dokumen -->
-                    <p class="text-sm text-gray-500 mt-1">
-                        ID Procurement: <span class="text-gray-700">{{ $item->external_id ?? '-' }}</span>
+                    <p class="text-sm opacity-70 mt-1">
+                        ID: <span class="font-medium">{{ $item->id_procurement ?? '-' }}</span>
                     </p>
 
                     <!-- Status -->
-                    <div class="mt-3">
-                        Status: <span class="text-sm font-medium text-gray-900">
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-xs font-semibold uppercase">Status:</span>
+                        <span class="badge badge-outline">
                              {{ $item->status instanceof \UnitEnum ? $item->status->label() : $item->status }}
                         </span>
                     </div>
@@ -344,14 +393,60 @@
         {{ $items->withQueryString()->links() }}
     </div>
 
-
-
-
 </div>
 
-
 @push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('searchableSelect', ({ options, value, placeholder }) => ({
+            isOpen: false,
+            search: '',
+            selectedVal: value,
+            selectedLabel: '',
+            options: options, 
 
+            init() {
+                const initial = this.options.find(o => o.value == this.selectedVal);
+                if(initial) {
+                    this.selectedLabel = initial.label;
+                }
+            },
 
+            get filteredOptions() {
+                if (this.search === '') return this.options;
+                return this.options.filter(option => 
+                    option.label.toLowerCase().includes(this.search.toLowerCase())
+                );
+            },
+
+            select(option) {
+                this.selectedVal = option.value;
+                this.selectedLabel = option.label;
+                this.search = '';
+                this.isOpen = false;
+            },
+
+            clear() {
+                this.selectedVal = '';
+                this.selectedLabel = '';
+                this.search = '';
+                this.isOpen = false;
+            },
+            
+            toggle() {
+                if (this.isOpen) {
+                    this.isOpen = false;
+                } else {
+                    this.isOpen = true;
+                    this.search = '';
+                    this.$nextTick(() => this.$refs.searchInput.focus());
+                }
+            }
+        }));
+    });
+</script>
+<style>
+/* Adjust pagination for DaisyUI if needed */
+</style>
 @endpush
 @endsection

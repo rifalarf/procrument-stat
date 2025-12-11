@@ -10,7 +10,7 @@ class TableColumnSeeder extends Seeder
     public function run()
     {
         $columns = [
-            ['key' => 'external_id', 'label' => 'ID Dokumen', 'order' => 1],
+            ['key' => 'id_procurement', 'label' => 'ID Procurement', 'order' => 1],
             ['key' => 'mat_code', 'label' => 'Mat Code', 'order' => 2],
             ['key' => 'nama_barang', 'label' => 'Nama Barang', 'order' => 3],
             ['key' => 'qty', 'label' => 'Qty', 'order' => 4],

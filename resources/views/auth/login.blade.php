@@ -4,7 +4,7 @@
 <div class="min-h-[80vh] flex flex-col justify-center items-center">
     <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
         <h1 class="text-2xl font-bold mb-6">Login</h1>
-        <p class="mb-6 text-gray-600">Please sign in with your Google company account.</p>
+        <p class="mb-6 text-gray-600">Silakan login dengan akun Google perusahaan Anda.</p>
         
         <a href="{{ route('auth.google') }}" class="inline-flex items-center justify-center bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm w-full transition-colors duration-200">
             <svg class="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
@@ -15,11 +15,11 @@
                 <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.799 L -6.734 42.379 C -8.804 40.439 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
                 </g>
             </svg>
-            Sign in with Google
+            Masuk dengan Google
         </a>
 
         <div class="my-6 border-t border-gray-300 relative">
-            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-gray-500 text-sm">Or Login with Credentials</span>
+            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-gray-500 text-sm">Atau Login dengan Akun</span>
         </div>
 
         <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
