@@ -163,35 +163,7 @@ class ProcurementController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function updateStatus(Request $request, $id)
-    {
-        $item = \App\Models\ProcurementItem::findOrFail($id);
-        
-        $request->validate([
-            'status' => 'required|string',
-        ]);
 
-        $oldStatus = $item->status;
-        $newStatus = $request->input('status');
-
-        if ($oldStatus !== $newStatus) {
-            $item->update([
-                'status' => $newStatus,
-                'tanggal_status' => now(),
-                'last_updated_by' => auth()->user()->email ?? 'System',
-                'last_updated_at' => now(),
-            ]);
-
-            // Log change
-            \App\Models\Log::create([
-                'procurement_item_id' => $item->id,
-                'changed_by' => auth()->user()->email ?? 'System',
-                'change_detail' => "Status changed from {$oldStatus} to {$newStatus}",
-            ]);
-        }
-
-        return response()->json(['success' => true, 'message' => 'Updated successfully']);
-    }
 
     public function bulkDestroy(Request $request)
     {

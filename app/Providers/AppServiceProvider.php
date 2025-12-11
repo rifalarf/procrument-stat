@@ -21,5 +21,9 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Pagination\Paginator::defaultView('vendor.pagination.daisyui');
         \Illuminate\Pagination\Paginator::defaultSimpleView('vendor.pagination.daisyui');
+
+        if($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }

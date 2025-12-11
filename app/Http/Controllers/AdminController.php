@@ -51,21 +51,7 @@ class AdminController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    public function showImportForm()
-    {
-        return view('admin.import');
-    }
 
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls',
-        ]);
-
-        \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ProcurementImport, $request->file('file'));
-
-        return back()->with('success', 'Data imported successfully.');
-    }
 
     public function destroy($id)
     {

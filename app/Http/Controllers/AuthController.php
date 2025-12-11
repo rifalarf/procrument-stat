@@ -23,8 +23,16 @@ class AuthController extends Controller
 
         $user = \App\Models\User::where('email', $googleUser->getEmail())->first();
 
+        // If not found, create a new user (Auto-Register)
         if (!$user) {
-            return redirect('/login')->with('error', 'Email not registered in the system.'); // Whitelist check
+            $user = \App\Models\User::create([
+                'email' => $googleUser->getEmail(),
+                'name' => $googleUser->getName(),
+                'google_id' => $googleUser->getId(),
+                'role' => 'user', // Default role
+                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)), // Random password
+                'username' => strtolower(str_replace(' ', '', $googleUser->getName())) . rand(100, 999), // Generate safe username
+            ]);
         }
 
         $user->update([

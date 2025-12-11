@@ -27,7 +27,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/procurement', [ProcurementController::class, 'store'])->name('procurement.store');
     Route::post('/procurement/{id}/quick-update', [ProcurementController::class, 'quickUpdate'])->name('procurement.quick-update');
     Route::resource('procurement', ProcurementController::class)->except(['create', 'store']);
-    Route::post('/procurement/{id}/status', [ProcurementController::class, 'updateStatus'])->name('procurement.updateStatus');
+
     
     // Admin Routes
     Route::get('/history', [\App\Http\Controllers\HistoryController::class, 'index'])->name('history.index');
