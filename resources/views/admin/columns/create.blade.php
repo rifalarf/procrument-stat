@@ -8,13 +8,7 @@
         <form action="{{ route('admin.columns.store') }}" method="POST" class="space-y-6">
             @csrf
             
-            <div>
-                <label for="key" class="block text-sm font-medium text-gray-700">Column Key (DB Field)</label>
-                <div class="mt-1">
-                    <input type="text" name="key" id="key" required placeholder="e.g. extra_notes" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
-                    <p class="mt-2 text-sm text-gray-500">Must be lowercase, no spaces (use underscores). e.g. 'extra_notes'. This will be stored in 'extra_attributes' if dynamic.</p>
-                </div>
-            </div>
+
 
             <div>
                 <label for="label" class="block text-sm font-medium text-gray-700">Display Label</label>

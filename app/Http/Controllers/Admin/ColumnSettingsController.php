@@ -32,15 +32,19 @@ class ColumnSettingsController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'key' => 'required|string|unique:table_columns,key|regex:/^[a-z0-9_]+$/',
             'label' => 'required|string|max:255',
             'type' => 'required|in:text,date,number,select',
             'order' => 'required|integer',
-            'is_visible' => 'boolean',
+            // 'is_visible' is handled separately
         ]);
 
-        $validated['is_dynamic'] = true; // Created columns are dynamic "extra" columns
-        $validated['is_visible'] = $request->has('is_visible'); // checkbox handling
+        // Auto-generate key: extra_slug_label
+        $slug = \Illuminate\Support\Str::slug($validated['label'], '_');
+        $key = 'extra_' . $slug . '_' . time(); // Unique key
+
+        $validated['key'] = $key;
+        $validated['is_dynamic'] = true; 
+        $validated['is_visible'] = $request->has('is_visible');
 
         TableColumn::create($validated);
 
@@ -63,13 +67,13 @@ class ColumnSettingsController extends Controller
         $validated = $request->validate([
             'label' => 'required|string|max:255',
             'order' => 'required|integer',
-            'is_visible' => 'boolean',
-            // Key and Type are generally immutable for simplicity to avoid data loss/mapping issues for now
         ]);
 
-        $validated['is_visible'] = $request->has('is_visible');
-
-        $column->update($validated);
+        $column->update([
+            'label' => $validated['label'],
+            'order' => $validated['order'],
+            'is_visible' => $request->has('is_visible'),
+        ]);
 
         return redirect()->route('admin.columns.index')->with('success', 'Column updated successfully.');
     }
@@ -79,9 +83,11 @@ class ColumnSettingsController extends Controller
      */
     public function destroy(TableColumn $column)
     {
-        // Prevent deleting core system columns if necessary, but table schema has no flag.
-        // We'll rely on user discretion or check is_dynamic if we want to protect core fields.
-        
+        // Safety: Do not allow deletion of NON-dynamic columns
+        if (!$column->is_dynamic) {
+            return back()->with('error', 'Cannot delete core system columns.');
+        }
+
         $column->delete();
 
         return redirect()->route('admin.columns.index')->with('success', 'Column deleted successfully.');
