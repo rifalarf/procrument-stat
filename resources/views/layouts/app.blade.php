@@ -37,6 +37,7 @@
         <div class="navbar-end gap-2">
             @auth
                 <span class="text-sm font-medium opacity-70 hidden md:inline-block">{{ Auth::user()->email }} ({{ Auth::user()->role }})</span>
+                <a href="{{ route('profile.edit') }}" class="btn btn-sm btn-ghost hidden md:inline-flex">Profile</a>
                 <a href="{{ route('history.index') }}" class="btn btn-sm btn-ghost hidden md:inline-flex">History</a>
                 @if(Auth::user()->isAdmin())
                     <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-ghost hidden md:inline-flex">Kelola User</a>

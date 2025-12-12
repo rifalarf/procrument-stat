@@ -21,6 +21,9 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    
     Route::get('/dashboard', [ProcurementController::class, 'index'])->name('dashboard');
     Route::get('/procurement/export', [ProcurementController::class, 'export'])->name('procurement.export');
     Route::get('/procurement/create', [ProcurementController::class, 'create'])->name('procurement.create');
