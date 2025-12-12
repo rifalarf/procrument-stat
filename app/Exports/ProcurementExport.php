@@ -27,7 +27,7 @@ class ProcurementExport implements FromQuery, WithHeadings, WithMapping, ShouldA
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('mat_code', 'like', "%{$search}%")
-                  ->orWhere('id_procurement', 'like', "%{$search}%")
+                  ->orWhere('no_pr', 'like', "%{$search}%")
                   ->orWhere('nama_barang', 'like', "%{$search}%")
                   ->orWhere('nama_vendor', 'like', "%{$search}%") 
                   ->orWhere('no_po', 'like', "%{$search}%")
@@ -112,7 +112,7 @@ class ProcurementExport implements FromQuery, WithHeadings, WithMapping, ShouldA
     public function map($item): array
     {
         return [
-            $item->id_procurement,
+            $item->no_pr,
             $item->mat_code,
             $item->nama_barang,
             $item->qty,

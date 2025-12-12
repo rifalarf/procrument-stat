@@ -15,7 +15,7 @@ class ProcurementController extends Controller
             $query->where(function ($q) use ($search) {
                 // Adjust schema column names if needed. 'nama_vendor' is correct per schema.
                 $q->where('mat_code', 'like', "%{$search}%")
-                  ->orWhere('id_procurement', 'like', "%{$search}%") // Added ID Procurement
+                  ->orWhere('no_pr', 'like', "%{$search}%") // Renamed ID Procurement to NO PR
                   ->orWhere('nama_barang', 'like', "%{$search}%")
                   ->orWhere('nama_vendor', 'like', "%{$search}%") 
                   ->orWhere('no_po', 'like', "%{$search}%")
@@ -310,7 +310,7 @@ class ProcurementController extends Controller
         }
 
         $validated = $request->validate([
-            'id_procurement' => 'nullable|string',
+            'no_pr' => 'nullable|string',
             'mat_code' => 'required|string|max:255',
             'nama_barang' => 'required|string',
             'qty' => 'required|numeric',

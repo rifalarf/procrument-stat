@@ -21,8 +21,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                     <!-- Static / Read-only Fields -->
                     <div class="form-control w-full">
-                        <label class="label"><span class="label-text font-medium opacity-70">ID Procurement</span></label>
-                        <div class="font-semibold">{{ $item->id_procurement }}</div>
+                        <label class="label"><span class="label-text font-medium opacity-70">NO PR</span></label>
+                        <div class="font-semibold">{{ $item->no_pr }}</div>
                     </div>
                     
                     <div class="form-control w-full">

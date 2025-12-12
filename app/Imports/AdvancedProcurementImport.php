@@ -157,11 +157,11 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
             // Auto-fill logic for empty external_id if preferred? No, let conflict logic handle it.
             
             // Check for conflict (ID Dokumen/Procurement)
-            $externalId = $data['id_procurement'] ?? null;
+            $externalId = $data['no_pr'] ?? $data['id_procurement'] ?? null;
             
             if ($externalId) {
                 // Remove update/create logic duplication
-                $existing = ProcurementItem::where('id_procurement', $externalId)->first();
+                $existing = ProcurementItem::where('no_pr', $externalId)->first();
                 if ($existing) {
                     if ($this->strategy === 'update') {
                          file_put_contents(storage_path('log.txt'), "Updating existing item: $externalId" . PHP_EOL, FILE_APPEND);
@@ -177,7 +177,7 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
             }
 
             // Skipped empty row check
-            if (empty($data['mat_code']) && empty($data['nama_barang']) && empty($data['id_procurement'])) {
+            if (empty($data['mat_code']) && empty($data['nama_barang']) && empty($data['no_pr'])) {
                 file_put_contents(storage_path('log.txt'), "Skipping empty row: " . json_encode($row) . PHP_EOL, FILE_APPEND);
                 continue;
             }

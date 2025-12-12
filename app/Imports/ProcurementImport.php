@@ -22,14 +22,14 @@ class ProcurementImport implements ToCollection, WithHeadingRow
             
             // Basic mapping
             \App\Models\ProcurementItem::create([
-                'id_procurement' => $row['id_procurement'] ?? $row['external_id'] ?? $row['sheet_id'] ?? null,
+                'no_pr' => $row['no_pr'] ?? $row['id_procurement'] ?? $row['external_id'] ?? $row['sheet_id'] ?? null,
                 'mat_code' => $row['mat_code'] ?? null,
                 'nama_barang' => $row['nama_barang'] ?? null,
                 'qty' => $row['qty'] ?? 0,
                 'um' => $row['um'] ?? null,
                 'pg' => $row['pg'] ?? null,
                 'user_requester' => $row['user_requester'] ?? $row['user'] ?? null,
-                'nilai' => $row['nilai'] ?? 0,
+                'nilai' => $this->cleanNilai($row['nilai'] ?? 0),
                 'bagian' => $row['bagian'] ?? null,
                 'tanggal_terima_dokumen' => isset($row['tanggal_terima_dokumen']) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['tanggal_terima_dokumen']) : null,
                 'proc_type' => $row['proc_type'] ?? null,
@@ -45,5 +45,19 @@ class ProcurementImport implements ToCollection, WithHeadingRow
                 'last_updated_at' => now(),
             ]);
         }
+    }
+
+    private function cleanNilai($value)
+    {
+        if (is_numeric($value)) {
+            return $value;
+        }
+        if (is_string($value)) {
+             // Remove dots, replace comma with dot
+             $cleaned = str_replace('.', '', $value);
+             $cleaned = str_replace(',', '.', $cleaned);
+             return is_numeric($cleaned) ? $cleaned : 0;
+        }
+        return 0;
     }
 }

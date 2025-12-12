@@ -67,7 +67,7 @@
         <!-- Row 1: Search -->
         <div class="form-control">
             <label class="label"><span class="label-text font-medium">Search</span></label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, ID Procurement, Name, User, PO..." class="input input-bordered w-full">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Mat Code, NO PR, Name, User, PO..." class="input input-bordered w-full">
         </div>
 
         <!-- Row 2: Filters -->
@@ -273,7 +273,7 @@
                     
                     <!-- ID Dokumen -->
                     <p class="text-sm opacity-70 mt-1">
-                        ID: <span class="font-medium">{{ $item->id_procurement ?? '-' }}</span>
+                        NO PR: <span class="font-medium">{{ $item->no_pr ?? '-' }}</span>
                     </p>
 
                     <!-- Status -->
