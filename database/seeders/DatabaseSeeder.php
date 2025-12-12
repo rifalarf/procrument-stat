@@ -17,9 +17,16 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Create Default Admin
+        \App\Models\User::updateOrCreate(
+            ['username' => 'admin'],
+            [
+                'name' => 'Super Administrator',
+                'email' => 'admin@procurement.test',
+                'password' => bcrypt('admin123'),
+                'role' => 'admin',
+                'bagian_access' => null, // Full access
+            ]
+        );
     }
 }
