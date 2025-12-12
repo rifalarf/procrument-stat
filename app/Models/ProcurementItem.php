@@ -6,7 +6,32 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProcurementItem extends Model
 {
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'no_pr',
+        'mat_code',
+        'nama_barang',
+        'qty',
+        'um',
+        'nilai',
+        'pg',
+        'user_requester',
+        'bagian',
+        'tanggal_terima_dokumen',
+        'proc_type',
+        'buyer',
+        'status',
+        'tanggal_status',
+        'emergency',
+        'no_po',
+        'nama_vendor',
+        'tanggal_po',
+        'tanggal_datang',
+        'keterangan',
+        'last_updated_by',
+        'last_updated_at',
+        'extra_attributes',
+        'id_procurement', // Legacy support if needed? No, removing it.
+    ];
 
     protected $casts = [
         'extra_attributes' => 'array',

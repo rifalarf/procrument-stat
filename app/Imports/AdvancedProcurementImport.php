@@ -49,6 +49,11 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
                 }
             }
 
+            // Clean Nilai specifically
+            if (isset($data['nilai'])) {
+                $data['nilai'] = $this->cleanNilai($data['nilai']);
+            }
+
             file_put_contents(storage_path('log.txt'), "Mapped Data Before Enum: " . json_encode($data) . PHP_EOL, FILE_APPEND);
 
             // Enum Conversion for Status
@@ -193,5 +198,30 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
                 file_put_contents(storage_path('log.txt'), "Failed to create item: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
             }
         }
+    }
+
+    private function cleanNilai($value)
+    {
+        if (is_null($value)) return 0;
+        
+        // Return if already numeric
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+             // Remove dots, replace comma with dot
+             // E.g. "100.000,00" -> "100000.00"
+             // E.g. "100.000" -> "100000"
+             
+             // Check format: Indonesian tends to use dot for thousands
+             $cleaned = str_replace('.', '', $value);
+             $cleaned = str_replace(',', '.', $cleaned);
+             
+             if (is_numeric($cleaned)) {
+                 return $cleaned;
+             }
+        }
+        return 0;
     }
 }
