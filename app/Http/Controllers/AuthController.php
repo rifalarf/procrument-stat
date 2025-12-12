@@ -23,16 +23,9 @@ class AuthController extends Controller
 
         $user = \App\Models\User::where('email', $googleUser->getEmail())->first();
 
-        // If not found, create a new user (Auto-Register)
+        // Strict Whitelist Check
         if (!$user) {
-            $user = \App\Models\User::create([
-                'email' => $googleUser->getEmail(),
-                'name' => $googleUser->getName(),
-                'google_id' => $googleUser->getId(),
-                'role' => 'user', // Default role
-                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)), // Random password
-                'username' => strtolower(str_replace(' ', '', $googleUser->getName())) . rand(100, 999), // Generate safe username
-            ]);
+            return redirect('/login')->with('error', 'Akses ditolak. Email Anda (' . $googleUser->getEmail() . ') tidak terdaftar di sistem. Hubungi Admin.');
         }
 
         $user->update([
