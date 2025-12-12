@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('procurement_item_id')->constrained('procurement_items')->onDelete('cascade');
-            $table->string('changed_by')->nullable();
-            $table->timestamp('changed_at')->useCurrent();
-            $table->text('change_detail')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('logs')) {
+            Schema::create('logs', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('procurement_item_id')->constrained('procurement_items')->onDelete('cascade');
+                $table->string('changed_by')->nullable();
+                $table->timestamp('changed_at')->useCurrent();
+                $table->text('change_detail')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
