@@ -6,9 +6,11 @@ use App\Models\ProcurementItem;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
-class AdvancedProcurementImport implements ToCollection, WithHeadingRow
+class AdvancedProcurementImport implements ToCollection, WithHeadingRow, WithChunkReading, WithBatchInserts
 {
     protected $mapping;
     protected $strategy;
@@ -25,7 +27,6 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
         foreach ($rows as $row) {
             // Map row data based on user mapping (DB Column Key => Excel Header Slug)
             $data = [];
-            file_put_contents(storage_path('log.txt'), "Row Start: " . json_encode($row) . PHP_EOL, FILE_APPEND); // Log Raw Row to file
 
             foreach ($this->mapping as $dbKey => $excelHeader) {
                 if ($excelHeader) {
@@ -40,7 +41,6 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
                                 $value = \Carbon\Carbon::parse($value);
                             }
                          } catch (\Exception $e) {
-                            file_put_contents(storage_path('log.txt'), "Date Parse Failed for $dbKey value: " . json_encode($value) . " Error: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
                             $value = null; 
                          }
                     }
@@ -54,7 +54,6 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
                 $data['nilai'] = $this->cleanNilai($data['nilai']);
             }
 
-            file_put_contents(storage_path('log.txt'), "Mapped Data Before Enum: " . json_encode($data) . PHP_EOL, FILE_APPEND);
 
             // Enum Conversion for Status
             if (isset($data['status'])) {
@@ -157,9 +156,8 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
                 }
             }
             
-            file_put_contents(storage_path('log.txt'), "Final Data for DB: " . json_encode($data) . PHP_EOL, FILE_APPEND);
 
-            // Auto-fill logic for empty external_id if preferred? No, let conflict logic handle it.
+            // Check for conflict (ID Dokumen/Procurement)
             
             // Check for conflict (ID Dokumen/Procurement)
             $externalId = $data['no_pr'] ?? $data['id_procurement'] ?? null;
@@ -169,33 +167,29 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
                 $existing = ProcurementItem::where('no_pr', $externalId)->first();
                 if ($existing) {
                     if ($this->strategy === 'update') {
-                         file_put_contents(storage_path('log.txt'), "Updating existing item: $externalId" . PHP_EOL, FILE_APPEND);
                          $existing->update(array_merge($data, [
                              'last_updated_by' => auth()->user()->email ?? 'Importer',
                              'last_updated_at' => now(),
                         ]));
-                    } else {
-                        file_put_contents(storage_path('log.txt'), "Skipping existing item: $externalId" . PHP_EOL, FILE_APPEND);
                     }
                     continue; 
                 }
             }
 
-            // Skipped empty row check
+            // Skip empty row
             if (empty($data['mat_code']) && empty($data['nama_barang']) && empty($data['no_pr'])) {
-                file_put_contents(storage_path('log.txt'), "Skipping empty row: " . json_encode($row) . PHP_EOL, FILE_APPEND);
                 continue;
             }
 
             // Create new
-            file_put_contents(storage_path('log.txt'), "Creating new item" . PHP_EOL, FILE_APPEND);
             try {
                 ProcurementItem::create(array_merge($data, [
                     'last_updated_by' => auth()->user()->email ?? 'Importer',
                     'last_updated_at' => now(),
                 ]));
             } catch (\Exception $e) {
-                file_put_contents(storage_path('log.txt'), "Failed to create item: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
+                // Log to Laravel log instead for production
+                \Log::warning('Import failed for row: ' . $e->getMessage());
             }
         }
     }
@@ -223,5 +217,22 @@ class AdvancedProcurementImport implements ToCollection, WithHeadingRow
              }
         }
         return 0;
+    }
+
+    /**
+     * Process in chunks of 500 rows at a time
+     * This prevents memory exhaustion and timeout on large files
+     */
+    public function chunkSize(): int
+    {
+        return 500;
+    }
+
+    /**
+     * Batch insert size for better performance
+     */
+    public function batchSize(): int
+    {
+        return 100;
     }
 }

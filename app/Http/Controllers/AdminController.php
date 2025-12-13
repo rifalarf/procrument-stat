@@ -15,17 +15,25 @@ class AdminController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['email' => 'required|email|unique:users']);
+        $request->validate([
+            'username' => 'required|string|unique:users|max:50',
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|unique:users',
+            'password' => 'required|string|min:6',
+            'role' => 'nullable|in:admin,user',
+            'bagian_access' => 'nullable|array',
+        ]);
         
         \App\Models\User::create([
-            'email' => $request->email,
-            'name' => 'New User', // Placeholder until login
-            'password' => bcrypt('password'), // Dummy password
+            'username' => $request->username,
+            'name' => $request->name,
+            'email' => $request->email ?: null,
+            'password' => bcrypt($request->password),
             'role' => $request->role ?? 'user',
-            'bagian_access' => $request->bagian_access ? (is_array($request->bagian_access) ? $request->bagian_access : [$request->bagian_access]) : null,
+            'bagian_access' => $request->bagian_access,
         ]);
 
-        return back()->with('success', 'User added to whitelist.');
+        return back()->with('success', 'User berhasil ditambahkan.');
     }
 
     public function edit($id)

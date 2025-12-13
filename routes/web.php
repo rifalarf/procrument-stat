@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ColumnController;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -28,6 +29,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/procurement/{id}/quick-update', [ProcurementController::class, 'quickUpdate'])->name('procurement.quick-update');
     Route::resource('procurement', ProcurementController::class)->except(['create', 'store']);
     Route::post('/procurement/{id}/status', [ProcurementController::class, 'updateStatus'])->name('procurement.updateStatus');
+    
+    // Profile Routes
+    Route::get('/profile/password', [ProfileController::class, 'showChangePasswordForm'])->name('profile.password');
+    Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password.update');
     
     // Admin Routes
     Route::middleware([\App\Http\Middleware\EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {

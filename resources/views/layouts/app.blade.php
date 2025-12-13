@@ -25,6 +25,7 @@
                     @if(Auth::user()->isAdmin())
                         <li><a href="{{ route('admin.users.index') }}">Management Users</a></li>
                     @endif
+                    <li><a href="{{ route('profile.password') }}">Ubah Password</a></li>
                 @endauth
               </ul>
             </div>
@@ -35,14 +36,26 @@
         </div>
         <div class="navbar-end gap-2">
             @auth
-                <span class="text-sm font-medium opacity-70 hidden md:inline-block">{{ Auth::user()->email }} ({{ Auth::user()->role }})</span>
                 @if(Auth::user()->isAdmin())
                     <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-ghost hidden md:inline-flex">Management Users</a>
                 @endif
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-ghost text-error">Logout</button>
-                </form>
+                <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                        <span class="hidden md:inline">{{ Auth::user()->name ?? Auth::user()->email }}</span>
+                        <span class="badge badge-sm {{ Auth::user()->isAdmin() ? 'badge-error' : 'badge-info' }}">{{ Auth::user()->role }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <li class="menu-title"><span class="text-xs opacity-50">{{ Auth::user()->email }}</span></li>
+                        <li><a href="{{ route('profile.password') }}">Ubah Password</a></li>
+                        <li class="text-error">
+                            <form method="POST" action="{{ route('logout') }}" class="w-full">
+                                @csrf
+                                <button type="submit" class="w-full text-left text-error">Logout</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             @endauth
         </div>
     </div>

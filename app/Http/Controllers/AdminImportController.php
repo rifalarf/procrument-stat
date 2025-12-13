@@ -52,24 +52,19 @@ class AdminImportController extends Controller
 
         $mapping = $request->input('mapping');
         $strategy = $request->input('strategy');
-        
-        // Pass the relative path given by the view
         $relativePath = $request->input('file_path');
         
-        // Ensure we get the absolute path for Maatwebsite
-        $absolutePath = \Illuminate\Support\Facades\Storage::path($relativePath);
+        // Dispatch to queue for background processing
+        // This prevents timeout on large files
+        \App\Jobs\ProcessLargeImport::dispatch(
+            $relativePath,
+            $mapping,
+            $strategy,
+            auth()->user()->email
+        );
 
-        try {
-            Excel::import(new \App\Imports\AdvancedProcurementImport($mapping, $strategy), $absolutePath);
-            
-            // Cleanup
-            if (\Illuminate\Support\Facades\Storage::exists($relativePath)) {
-                \Illuminate\Support\Facades\Storage::delete($relativePath);
-            }
-
-            return redirect()->route('dashboard')->with('success', 'Import completed successfully.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Import failed: ' . $e->getMessage());
-        }
+        return redirect()->route('dashboard')->with('success', 
+            'Import sedang diproses di background. Data akan muncul dalam beberapa menit.'
+        );
     }
 }

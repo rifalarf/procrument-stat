@@ -84,7 +84,7 @@ class ProcurementExport implements FromQuery, WithHeadings, WithMapping, ShouldA
     public function headings(): array
     {
         return [
-            'ID Procurement',
+            'NO PR',
             'Mat Code',
             'Nama Barang',
             'Qty',
