@@ -55,6 +55,13 @@
                 <div class="bg-red-50 rounded-lg p-4 text-center">
                     <div class="text-2xl font-bold text-red-600" id="failed-count">{{ $progress->failed_count }}</div>
                     <div class="text-sm text-gray-500">Gagal</div>
+                    @if($progress->failed_count > 0)
+                        <a href="{{ route('admin.import.progress.errors', $progress->id) }}" 
+                           class="text-xs text-red-600 hover:text-red-800 underline mt-1 inline-block"
+                           id="view-errors-link">
+                            Lihat Detail →
+                        </a>
+                    @endif
                 </div>
             </div>
 

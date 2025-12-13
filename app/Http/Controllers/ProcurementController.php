@@ -76,7 +76,7 @@ class ProcurementController extends Controller
              $query->where('user_requester', $user);
         }
 
-        $items = $query->latest('last_updated_at')->paginate(100);
+        $items = $query->latest('last_updated_at')->paginate(50);
         $columns = \App\Models\TableColumn::ordered()->visible()->get();
         $buyers = \App\Enums\BuyerEnum::cases();
         $statuses = \App\Enums\ProcurementStatusEnum::cases();
@@ -210,16 +210,24 @@ class ProcurementController extends Controller
         return back()->with('success', 'Selected items deleted.');
     }
 
-    public function truncate()
+    public function truncate(Request $request)
     {
-        // Double check admin middleware handles auth, but good to be safe if moved.
         if (!auth()->user()->isAdmin()) {
             return back()->with('error', 'Unauthorized');
         }
 
+        // Validate confirmation text
+        $request->validate([
+            'confirmation' => 'required|string',
+        ]);
+
+        if ($request->input('confirmation') !== 'hapus semua data') {
+            return back()->with('error', 'Konfirmasi tidak sesuai. Ketik "hapus semua data" untuk menghapus.');
+        }
+
         \App\Models\ProcurementItem::truncate();
 
-        return redirect()->route('dashboard')->with('success', 'All data has been deleted.');
+        return redirect()->route('dashboard')->with('success', 'Semua data berhasil dihapus.');
     }
 
     public function show($id)

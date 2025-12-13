@@ -133,6 +133,25 @@ class AdminImportController extends Controller
     }
 
     /**
+     * Show paginated import errors
+     */
+    public function progressErrors($id)
+    {
+        $progress = ImportProgress::findOrFail($id);
+        
+        if ($progress->user_email !== auth()->user()->email && auth()->user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $errors = $progress->errors()->orderBy('row_number')->paginate(50);
+
+        return view('admin.import.errors', [
+            'progress' => $progress,
+            'errors' => $errors,
+        ]);
+    }
+
+    /**
      * Process a single chunk of data (called via AJAX)
      */
     public function processChunk(Request $request, $id)
@@ -204,12 +223,20 @@ class AdminImportController extends Controller
                 // Try to save
                 try {
                     $result = $this->saveRow($data, $strategy);
-                    if ($result) {
+                    if ($result === true) {
                         $successCount++;
+                    } elseif ($result === false) {
+                        // Skipped (duplicate with skip strategy)
                     }
                 } catch (\Exception $e) {
                     $failedCount++;
-                    \Log::warning('Import row failed: ' . $e->getMessage());
+                    // Save error details
+                    \App\Models\ImportError::create([
+                        'import_progress_id' => $progress->id,
+                        'row_number' => $row,
+                        'row_data' => $rowData,
+                        'error_message' => $e->getMessage(),
+                    ]);
                 }
             }
 

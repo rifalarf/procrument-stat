@@ -47,4 +47,12 @@ class ImportProgress extends Model
             ->orderBy('created_at', 'desc')
             ->first();
     }
+
+    /**
+     * Get all errors for this import
+     */
+    public function errors()
+    {
+        return $this->hasMany(\App\Models\ImportError::class);
+    }
 }

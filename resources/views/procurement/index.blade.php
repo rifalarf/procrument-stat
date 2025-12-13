@@ -293,6 +293,91 @@
         {{ $items->withQueryString()->links() }}
     </div>
 
+    @if(auth()->user()->isAdmin())
+    <!-- Danger Zone - Placed at bottom, far from other buttons -->
+    <div class="mt-12 pt-8 border-t border-gray-200" x-data="{ showDanger: false, confirmText: '', canDelete: false }">
+        <details class="collapse bg-red-50 border border-red-200 rounded-lg">
+            <summary class="collapse-title text-sm font-medium text-red-800 cursor-pointer">
+                ⚠️ Zona Berbahaya (Klik untuk Membuka)
+            </summary>
+            <div class="collapse-content">
+                <div class="pt-4">
+                    <p class="text-sm text-red-600 mb-4">
+                        <strong>Peringatan:</strong> Tindakan di bawah ini tidak dapat dibatalkan dan akan menghapus SEMUA data procurement.
+                    </p>
+                    
+                    <button type="button" 
+                            @click="showDanger = true" 
+                            class="btn btn-error btn-outline btn-sm">
+                        🗑️ Hapus Semua Data
+                    </button>
+                </div>
+            </div>
+        </details>
+
+        <!-- Confirmation Modal -->
+        <div x-show="showDanger" 
+             x-cloak
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             aria-labelledby="modal-title" 
+             role="dialog" 
+             aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Background overlay -->
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showDanger = false"></div>
+
+                <!-- Modal -->
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <form action="{{ route('admin.procurement.delete-all') }}" method="POST">
+                        @csrf
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="sm:flex sm:items-start">
+                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                        Hapus Semua Data
+                                    </h3>
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-500 mb-4">
+                                            Tindakan ini akan menghapus <strong>SEMUA</strong> data procurement secara permanen. 
+                                            Tidak dapat dibatalkan.
+                                        </p>
+                                        <p class="text-sm text-gray-700 mb-2">
+                                            Ketik <strong class="text-red-600">hapus semua data</strong> untuk konfirmasi:
+                                        </p>
+                                        <input type="text" 
+                                               name="confirmation"
+                                               x-model="confirmText"
+                                               @input="canDelete = (confirmText === 'hapus semua data')"
+                                               placeholder="Ketik di sini..."
+                                               class="input input-bordered w-full"
+                                               autocomplete="off">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                            <button type="submit" 
+                                    :disabled="!canDelete"
+                                    :class="{ 'btn-disabled opacity-50': !canDelete }"
+                                    class="btn btn-error text-white">
+                                Hapus Permanen
+                            </button>
+                            <button type="button" @click="showDanger = false; confirmText = ''; canDelete = false" class="btn btn-ghost">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
 </div>
 
 @push('scripts')
