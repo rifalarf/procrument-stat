@@ -44,6 +44,7 @@ Route::middleware(['auth'])->group(function () {
          Route::post('/import/process', [\App\Http\Controllers\AdminImportController::class, 'process'])->name('import.process');
          Route::get('/import/progress/{id}', [\App\Http\Controllers\AdminImportController::class, 'progress'])->name('import.progress');
          Route::get('/import/progress/{id}/status', [\App\Http\Controllers\AdminImportController::class, 'progressStatus'])->name('import.progress.status');
+         Route::post('/import/progress/{id}/chunk', [\App\Http\Controllers\AdminImportController::class, 'processChunk'])->name('import.progress.chunk');
 
          // Column Management
          Route::resource('columns', \App\Http\Controllers\Admin\ColumnSettingsController::class);

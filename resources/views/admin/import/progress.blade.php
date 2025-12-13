@@ -32,7 +32,7 @@
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                     <div id="progress-bar" 
-                         class="h-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-500 ease-out"
+                         class="h-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-300 ease-out"
                          style="width: {{ $progress->progress_percentage }}%">
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-gray-600">Memproses data...</span>
+                <span class="text-gray-600" id="loading-text">Memproses data...</span>
             </div>
 
             <!-- Action Buttons -->
@@ -115,12 +115,19 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const progressId = {{ $progress->id }};
-    let isPolling = true;
+    const csrfToken = '{{ csrf_token() }}';
+    let isProcessing = false;
+    let retryCount = 0;
+    const maxRetries = 3;
     
     function updateUI(data) {
+        const percentage = data.total_rows > 0 
+            ? Math.round((data.processed_rows / data.total_rows) * 100) 
+            : 0;
+        
         // Update progress bar
-        document.getElementById('progress-bar').style.width = data.progress_percentage + '%';
-        document.getElementById('progress-percentage').textContent = data.progress_percentage + '%';
+        document.getElementById('progress-bar').style.width = percentage + '%';
+        document.getElementById('progress-percentage').textContent = percentage + '%';
         
         // Update counts
         document.getElementById('processed-count').textContent = data.processed_rows;
@@ -128,60 +135,98 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('success-count').textContent = data.success_count;
         document.getElementById('failed-count').textContent = data.failed_count;
         
-        // Update status badge
+        // Update loading text
+        document.getElementById('loading-text').textContent = 
+            `Memproses... ${data.processed_rows} / ${data.total_rows} baris`;
+    }
+    
+    function updateStatus(status, errorMessage = null) {
         const statusBadge = document.getElementById('status-badge');
         const statusText = document.getElementById('status-text');
-        statusText.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+        statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
         
         statusBadge.className = 'px-3 py-1 text-sm font-medium rounded-full ';
-        if (data.status === 'completed') {
+        
+        if (status === 'completed') {
             statusBadge.className += 'bg-green-100 text-green-800';
             document.getElementById('success-container').classList.remove('hidden');
             document.getElementById('loading-indicator').classList.add('hidden');
-            isPolling = false;
-        } else if (data.status === 'processing') {
+        } else if (status === 'processing') {
             statusBadge.className += 'bg-blue-100 text-blue-800';
-        } else if (data.status === 'pending') {
+        } else if (status === 'pending') {
             statusBadge.className += 'bg-yellow-100 text-yellow-800';
-        } else if (data.status === 'failed') {
+        } else if (status === 'failed') {
             statusBadge.className += 'bg-red-100 text-red-800';
             document.getElementById('error-container').classList.remove('hidden');
-            document.getElementById('error-message').textContent = data.error_message || 'Unknown error occurred';
+            document.getElementById('error-message').textContent = errorMessage || 'Unknown error occurred';
             document.getElementById('loading-indicator').classList.add('hidden');
-            isPolling = false;
         }
     }
     
-    function pollProgress() {
-        if (!isPolling) return;
+    async function processNextChunk() {
+        if (isProcessing) return;
+        isProcessing = true;
         
-        fetch('/admin/import/progress/' + progressId + '/status')
-            .then(response => response.json())
-            .then(data => {
-                updateUI(data);
-                
-                if (isPolling) {
-                    setTimeout(pollProgress, 2000); // Poll every 2 seconds
-                }
-            })
-            .catch(error => {
-                console.error('Error polling progress:', error);
-                if (isPolling) {
-                    setTimeout(pollProgress, 5000); // Retry after 5 seconds on error
-                }
+        try {
+            const response = await fetch(`/admin/import/progress/${progressId}/chunk`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
             });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Request failed');
+            }
+            
+            retryCount = 0; // Reset retry count on success
+            
+            // Get updated progress
+            const statusResponse = await fetch(`/admin/import/progress/${progressId}/status`);
+            const statusData = await statusResponse.json();
+            
+            updateUI(statusData);
+            updateStatus(statusData.status, statusData.error_message);
+            
+            if (!data.is_complete) {
+                isProcessing = false;
+                // Process next chunk immediately
+                setTimeout(processNextChunk, 100);
+            } else {
+                isProcessing = false;
+            }
+            
+        } catch (error) {
+            console.error('Chunk processing error:', error);
+            retryCount++;
+            
+            if (retryCount < maxRetries) {
+                isProcessing = false;
+                // Retry after a delay
+                setTimeout(processNextChunk, 2000);
+            } else {
+                updateStatus('failed', error.message);
+                isProcessing = false;
+            }
+        }
     }
     
-    // Start polling if import is in progress
+    // Start processing if import is pending
     @if(in_array($progress->status, ['pending', 'processing']))
-        pollProgress();
+        processNextChunk();
     @else
         // If already completed/failed, show appropriate message
         @if($progress->status === 'completed')
             document.getElementById('success-container').classList.remove('hidden');
+            document.getElementById('loading-indicator').classList.add('hidden');
         @elseif($progress->status === 'failed')
             document.getElementById('error-container').classList.remove('hidden');
             document.getElementById('error-message').textContent = '{{ $progress->error_message ?? "Unknown error" }}';
+            document.getElementById('loading-indicator').classList.add('hidden');
         @endif
     @endif
 });
